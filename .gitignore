@@ -1,0 +1,21 @@
+# Visual Studio junk — this was causing your permission error
+**/.vs/
+*.user
+
+# Backend compiled output
+**/bin/
+**/obj/
+
+# Your local secrets — NEVER commit this
+**/appsettings.Development.json
+
+# Frontend dependencies
+**/node_modules/
+
+# Frontend env variables
+**/.env
+**/.env.local
+
+# OS garbage
+.DS_Store
+Thumbs.db
