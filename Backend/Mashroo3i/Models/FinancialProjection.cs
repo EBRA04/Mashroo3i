@@ -1,6 +1,6 @@
 ﻿namespace Mashroo3i.Models
 {
-    public class FinancialPlan
+    public class FinancialProjection
     {
         public Guid PlanId { get; set; } = Guid.NewGuid();
         public Guid IdeaId { get; set; }

@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Mashroo3i.Models;
+﻿using Mashroo3i.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Mashroo3i.Data
 {
@@ -8,11 +8,13 @@ namespace Mashroo3i.Data
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options) { }
 
+        // DbSets
         public DbSet<User> Users => Set<User>();
         public DbSet<BusinessIdea> BusinessIdeas => Set<BusinessIdea>();
-        public DbSet<Evaluation> Evaluations => Set<Evaluation>();
+        public DbSet<EvaluationScores> EvaluationScores => Set<EvaluationScores>();
+        public DbSet<SwotAnalysis> SwotAnalyses => Set<SwotAnalysis>();
         public DbSet<MarketAnalysis> MarketAnalyses => Set<MarketAnalysis>();
-        public DbSet<FinancialPlan> FinancialPlans => Set<FinancialPlan>();
+        public DbSet<FinancialProjection> FinancialPlans => Set<FinancialProjection>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -31,40 +33,59 @@ namespace Mashroo3i.Data
             {
                 e.HasKey(b => b.IdeaId);
                 e.HasOne(b => b.User)
-                 .WithMany()
-                 .HasForeignKey(b => b.UserId)
-                 .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany()
+                    .HasForeignKey(b => b.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
                 e.Property(b => b.EstimatedBudget).HasColumnType("decimal(18,2)");
+                e.Property(b => b.Status).HasDefaultValue("submitted");
             });
 
-            // Evaluation
-            builder.Entity<Evaluation>(e =>
+            // EvaluationScores
+            builder.Entity<EvaluationScores>(e =>
             {
-                e.HasKey(ev => ev.EvaluationId);
+                e.HasKey(ev => ev.Id);
                 e.HasOne(ev => ev.BusinessIdea)
-                 .WithOne(b => b.Evaluation)
-                 .HasForeignKey<Evaluation>(ev => ev.IdeaId)
-                 .OnDelete(DeleteBehavior.Cascade);
+                    .WithOne(b => b.EvaluationScores)
+                    .HasForeignKey<EvaluationScores>(ev => ev.IdeaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasIndex(ev => ev.IdeaId).IsUnique();
+            });
+
+            // SwotAnalysis
+            builder.Entity<SwotAnalysis>(e =>
+            {
+                e.HasKey(s => s.Id);
+                e.HasOne(s => s.BusinessIdea)
+                    .WithOne(b => b.SwotAnalysis)
+                    .HasForeignKey<SwotAnalysis>(s => s.IdeaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasIndex(s => s.IdeaId).IsUnique();
             });
 
             // MarketAnalysis
             builder.Entity<MarketAnalysis>(e =>
             {
-                e.HasKey(m => m.MarketAnalysisId);
+                e.HasKey(m => m.Id);
                 e.HasOne(m => m.BusinessIdea)
-                 .WithOne(b => b.MarketAnalysis)
-                 .HasForeignKey<MarketAnalysis>(m => m.IdeaId)
-                 .OnDelete(DeleteBehavior.Cascade);
+                    .WithOne(b => b.MarketAnalysis)
+                    .HasForeignKey<MarketAnalysis>(m => m.IdeaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasIndex(m => m.IdeaId).IsUnique();
             });
 
-            // FinancialPlan
-            builder.Entity<FinancialPlan>(e =>
+            // FinancialProjection
+            builder.Entity<FinancialProjection>(e =>
             {
                 e.HasKey(f => f.PlanId);
                 e.HasOne(f => f.BusinessIdea)
-                 .WithOne(b => b.FinancialPlan)
-                 .HasForeignKey<FinancialPlan>(f => f.IdeaId)
-                 .OnDelete(DeleteBehavior.Cascade);
+                    .WithOne(b => b.FinancialPlan)
+                    .HasForeignKey<FinancialProjection>(f => f.IdeaId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
                 e.Property(f => f.InitialInvestment).HasColumnType("decimal(18,2)");
                 e.Property(f => f.MonthlyRevenue).HasColumnType("decimal(18,2)");
                 e.Property(f => f.MonthlyCosts).HasColumnType("decimal(18,2)");

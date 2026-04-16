@@ -1,12 +1,13 @@
+using Mashroo3i.Configuration;
 using Mashroo3i.Data;
 using Mashroo3i.Interfaces;
 using Mashroo3i.Services;
+using Mashroo3i.Services.AI;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Text;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,29 @@ builder.Services.AddOpenApi();
 // JWT Service
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
+// AI - pick the active provider from config, wire it up once, done
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<IAIService>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var active = config["AIProvider:Active"] ?? "Groq";
+
+    var settings = new ProviderSettings
+    {
+        ApiKey = config[$"AIProvider:{active}:ApiKey"]!,
+        Model = config[$"AIProvider:{active}:Model"]!,
+        BaseUrl = config[$"AIProvider:{active}:BaseUrl"]!
+    };
+
+    return new OpenAICompatibleAIService(
+        sp.GetRequiredService<IHttpClientFactory>(),
+        settings,
+        active,
+        sp.GetRequiredService<ILogger<OpenAICompatibleAIService>>());
+});
+
+//  services
+builder.Services.AddScoped<BusinessIdeaService>();
 // JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -36,11 +60,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-//configure database connection
+// Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// CORS for React
+// CORS for React frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
@@ -55,12 +79,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();//Ebra:im using scalar do the swagger one if u want 
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
 app.UseCors("Frontend");
-app.UseAuthentication(); 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

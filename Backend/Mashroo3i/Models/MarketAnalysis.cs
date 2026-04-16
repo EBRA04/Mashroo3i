@@ -2,22 +2,17 @@
 {
     public class MarketAnalysis
     {
-        public Guid MarketAnalysisId { get; set; } = Guid.NewGuid();
+        public Guid Id { get; set; } = Guid.NewGuid();
         public Guid IdeaId { get; set; }
 
-        // User inputs
-        public string BusinessType { get; set; } = string.Empty;
-        public string AmmanRegion { get; set; } = "central";
-
-        // AI generated outputs
-        public string CompetitorInsights { get; set; } = string.Empty;
-        public string IndustryCostBenchmarks { get; set; } = string.Empty;
-        public string MarketTrends { get; set; } = string.Empty;
         public string MarketSize { get; set; } = string.Empty;
-        public string? Recommendations { get; set; }
+        public string FatalFlaws { get; set; } = string.Empty;
+        public string LikelyFailureMode { get; set; } = string.Empty;
+        public string CompetitorAnalysis { get; set; } = string.Empty;
 
-        public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        // Navigation property
         public BusinessIdea BusinessIdea { get; set; } = null!;
     }
 }

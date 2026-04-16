@@ -28,10 +28,6 @@ namespace Mashroo3i.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("AmmanRegion")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("BusinessType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -52,13 +48,19 @@ namespace Mashroo3i.Migrations
                     b.Property<string>("ProblemStatement")
                         .HasColumnType("text");
 
+                    b.Property<string>("Provinces")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Sector")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("submitted");
 
                     b.Property<string>("TargetAudience")
                         .HasColumnType("text");
@@ -80,65 +82,40 @@ namespace Mashroo3i.Migrations
                     b.ToTable("BusinessIdeas");
                 });
 
-            modelBuilder.Entity("Mashroo3i.Models.Evaluation", b =>
+            modelBuilder.Entity("Mashroo3i.Models.EvaluationScores", b =>
                 {
-                    b.Property<Guid>("EvaluationId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("GeneratedAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("IdeaId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("MarketPotentialScore")
+                    b.Property<int>("MarketScore")
                         .HasColumnType("integer");
 
                     b.Property<int>("NoveltyScore")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Opportunities")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<int>("OverallScore")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Recommendations")
-                        .HasColumnType("text");
-
-                    b.Property<string>("RedFlags")
-                        .HasColumnType("text");
-
-                    b.Property<string>("RiskLevel")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Strengths")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Threats")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Verdict")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Weaknesses")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("EvaluationId");
+                    b.HasKey("Id");
 
                     b.HasIndex("IdeaId")
                         .IsUnique();
 
-                    b.ToTable("Evaluations");
+                    b.ToTable("EvaluationScores");
                 });
 
-            modelBuilder.Entity("Mashroo3i.Models.FinancialPlan", b =>
+            modelBuilder.Entity("Mashroo3i.Models.FinancialProjection", b =>
                 {
                     b.Property<Guid>("PlanId")
                         .ValueGeneratedOnAdd()
@@ -199,25 +176,25 @@ namespace Mashroo3i.Migrations
 
             modelBuilder.Entity("Mashroo3i.Models.MarketAnalysis", b =>
                 {
-                    b.Property<Guid>("MarketAnalysisId")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("BusinessType")
+                    b.Property<string>("CompetitorAnalysis")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("CompetitorInsights")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("GeneratedAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FatalFlaws")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<Guid>("IdeaId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("IndustryCostBenchmarks")
+                    b.Property<string>("LikelyFailureMode")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -225,19 +202,48 @@ namespace Mashroo3i.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("MarketTrends")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Recommendations")
-                        .HasColumnType("text");
-
-                    b.HasKey("MarketAnalysisId");
+                    b.HasKey("Id");
 
                     b.HasIndex("IdeaId")
                         .IsUnique();
 
                     b.ToTable("MarketAnalyses");
+                });
+
+            modelBuilder.Entity("Mashroo3i.Models.SwotAnalysis", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("IdeaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Opportunities")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Strengths")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Threats")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Weaknesses")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdeaId")
+                        .IsUnique();
+
+                    b.ToTable("SwotAnalyses");
                 });
 
             modelBuilder.Entity("Mashroo3i.Models.User", b =>
@@ -303,22 +309,22 @@ namespace Mashroo3i.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Mashroo3i.Models.Evaluation", b =>
+            modelBuilder.Entity("Mashroo3i.Models.EvaluationScores", b =>
                 {
                     b.HasOne("Mashroo3i.Models.BusinessIdea", "BusinessIdea")
-                        .WithOne("Evaluation")
-                        .HasForeignKey("Mashroo3i.Models.Evaluation", "IdeaId")
+                        .WithOne("EvaluationScores")
+                        .HasForeignKey("Mashroo3i.Models.EvaluationScores", "IdeaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("BusinessIdea");
                 });
 
-            modelBuilder.Entity("Mashroo3i.Models.FinancialPlan", b =>
+            modelBuilder.Entity("Mashroo3i.Models.FinancialProjection", b =>
                 {
                     b.HasOne("Mashroo3i.Models.BusinessIdea", "BusinessIdea")
                         .WithOne("FinancialPlan")
-                        .HasForeignKey("Mashroo3i.Models.FinancialPlan", "IdeaId")
+                        .HasForeignKey("Mashroo3i.Models.FinancialProjection", "IdeaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -336,13 +342,26 @@ namespace Mashroo3i.Migrations
                     b.Navigation("BusinessIdea");
                 });
 
+            modelBuilder.Entity("Mashroo3i.Models.SwotAnalysis", b =>
+                {
+                    b.HasOne("Mashroo3i.Models.BusinessIdea", "BusinessIdea")
+                        .WithOne("SwotAnalysis")
+                        .HasForeignKey("Mashroo3i.Models.SwotAnalysis", "IdeaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BusinessIdea");
+                });
+
             modelBuilder.Entity("Mashroo3i.Models.BusinessIdea", b =>
                 {
-                    b.Navigation("Evaluation");
+                    b.Navigation("EvaluationScores");
 
                     b.Navigation("FinancialPlan");
 
                     b.Navigation("MarketAnalysis");
+
+                    b.Navigation("SwotAnalysis");
                 });
 #pragma warning restore 612, 618
         }

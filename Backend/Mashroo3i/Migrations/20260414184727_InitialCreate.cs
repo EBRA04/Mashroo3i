@@ -44,10 +44,10 @@ namespace Mashroo3i.Migrations
                     Usp = table.Column<string>(type: "text", nullable: true),
                     BusinessType = table.Column<string>(type: "text", nullable: false),
                     Sector = table.Column<string>(type: "text", nullable: false),
-                    AmmanRegion = table.Column<string>(type: "text", nullable: false),
+                    Provinces = table.Column<string>(type: "text", nullable: false),
                     BusinessTypeReason = table.Column<string>(type: "text", nullable: true),
                     EstimatedBudget = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    Status = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<string>(type: "text", nullable: false, defaultValue: "submitted"),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -62,29 +62,22 @@ namespace Mashroo3i.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Evaluations",
+                name: "EvaluationScores",
                 columns: table => new
                 {
-                    EvaluationId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     IdeaId = table.Column<Guid>(type: "uuid", nullable: false),
-                    NoveltyScore = table.Column<int>(type: "integer", nullable: false),
-                    MarketPotentialScore = table.Column<int>(type: "integer", nullable: false),
                     OverallScore = table.Column<int>(type: "integer", nullable: false),
-                    RiskLevel = table.Column<string>(type: "text", nullable: false),
-                    Strengths = table.Column<string>(type: "text", nullable: false),
-                    Weaknesses = table.Column<string>(type: "text", nullable: false),
-                    Opportunities = table.Column<string>(type: "text", nullable: false),
-                    Threats = table.Column<string>(type: "text", nullable: false),
-                    Recommendations = table.Column<string>(type: "text", nullable: true),
-                    Verdict = table.Column<string>(type: "text", nullable: true),
-                    RedFlags = table.Column<string>(type: "text", nullable: true),
-                    GeneratedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    NoveltyScore = table.Column<int>(type: "integer", nullable: false),
+                    MarketScore = table.Column<int>(type: "integer", nullable: false),
+                    Verdict = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Evaluations", x => x.EvaluationId);
+                    table.PrimaryKey("PK_EvaluationScores", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Evaluations_BusinessIdeas_IdeaId",
+                        name: "FK_EvaluationScores_BusinessIdeas_IdeaId",
                         column: x => x.IdeaId,
                         principalTable: "BusinessIdeas",
                         principalColumn: "IdeaId",
@@ -127,21 +120,42 @@ namespace Mashroo3i.Migrations
                 name: "MarketAnalyses",
                 columns: table => new
                 {
-                    MarketAnalysisId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     IdeaId = table.Column<Guid>(type: "uuid", nullable: false),
-                    BusinessType = table.Column<string>(type: "text", nullable: false),
-                    CompetitorInsights = table.Column<string>(type: "text", nullable: false),
-                    IndustryCostBenchmarks = table.Column<string>(type: "text", nullable: false),
-                    MarketTrends = table.Column<string>(type: "text", nullable: false),
                     MarketSize = table.Column<string>(type: "text", nullable: false),
-                    Recommendations = table.Column<string>(type: "text", nullable: true),
-                    GeneratedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    FatalFlaws = table.Column<string>(type: "text", nullable: false),
+                    LikelyFailureMode = table.Column<string>(type: "text", nullable: false),
+                    CompetitorAnalysis = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MarketAnalyses", x => x.MarketAnalysisId);
+                    table.PrimaryKey("PK_MarketAnalyses", x => x.Id);
                     table.ForeignKey(
                         name: "FK_MarketAnalyses_BusinessIdeas_IdeaId",
+                        column: x => x.IdeaId,
+                        principalTable: "BusinessIdeas",
+                        principalColumn: "IdeaId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SwotAnalyses",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    IdeaId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Strengths = table.Column<string>(type: "text", nullable: false),
+                    Weaknesses = table.Column<string>(type: "text", nullable: false),
+                    Opportunities = table.Column<string>(type: "text", nullable: false),
+                    Threats = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SwotAnalyses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SwotAnalyses_BusinessIdeas_IdeaId",
                         column: x => x.IdeaId,
                         principalTable: "BusinessIdeas",
                         principalColumn: "IdeaId",
@@ -154,8 +168,8 @@ namespace Mashroo3i.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Evaluations_IdeaId",
-                table: "Evaluations",
+                name: "IX_EvaluationScores_IdeaId",
+                table: "EvaluationScores",
                 column: "IdeaId",
                 unique: true);
 
@@ -172,6 +186,12 @@ namespace Mashroo3i.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_SwotAnalyses_IdeaId",
+                table: "SwotAnalyses",
+                column: "IdeaId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
                 column: "Email",
@@ -182,13 +202,16 @@ namespace Mashroo3i.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Evaluations");
+                name: "EvaluationScores");
 
             migrationBuilder.DropTable(
                 name: "FinancialPlans");
 
             migrationBuilder.DropTable(
                 name: "MarketAnalyses");
+
+            migrationBuilder.DropTable(
+                name: "SwotAnalyses");
 
             migrationBuilder.DropTable(
                 name: "BusinessIdeas");
