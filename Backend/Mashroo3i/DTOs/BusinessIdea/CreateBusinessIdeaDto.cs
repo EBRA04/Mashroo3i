@@ -25,8 +25,6 @@ namespace Mashroo3i.DTOs.BusinessIdea
         [Required]
         public string Sector { get; set; } = "other";
 
-        public string Provinces { get; set; } = "Amman";
-
         [MaxLength(300)]
         public string? BusinessTypeReason { get; set; }
 
