@@ -25,7 +25,6 @@ namespace Mashroo3i.Services
                 Usp = dto.Usp,
                 BusinessType = dto.BusinessType,
                 Sector = dto.Sector,
-                Provinces = dto.Provinces,
                 BusinessTypeReason = dto.BusinessTypeReason,
                 EstimatedBudget = dto.EstimatedBudget,
                 Status = BusinessIdea.StatusSubmitted

@@ -68,9 +68,15 @@ namespace Mashroo3i.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     IdeaId = table.Column<Guid>(type: "uuid", nullable: false),
                     OverallScore = table.Column<int>(type: "integer", nullable: false),
-                    NoveltyScore = table.Column<int>(type: "integer", nullable: false),
                     MarketScore = table.Column<int>(type: "integer", nullable: false),
+                    FinancialScore = table.Column<int>(type: "integer", nullable: false),
+                    ExecutionScore = table.Column<int>(type: "integer", nullable: false),
+                    InnovationScore = table.Column<int>(type: "integer", nullable: false),
                     Verdict = table.Column<string>(type: "text", nullable: false),
+                    Summary = table.Column<string>(type: "text", nullable: false),
+                    Strengths = table.Column<string>(type: "text", nullable: false),
+                    Concerns = table.Column<string>(type: "text", nullable: false),
+                    Recommendations = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -149,6 +155,8 @@ namespace Mashroo3i.Migrations
                     Weaknesses = table.Column<string>(type: "text", nullable: false),
                     Opportunities = table.Column<string>(type: "text", nullable: false),
                     Threats = table.Column<string>(type: "text", nullable: false),
+                    Risks = table.Column<string>(type: "text", nullable: false),
+                    OverallRiskLevel = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>

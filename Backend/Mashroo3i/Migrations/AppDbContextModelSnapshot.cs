@@ -88,20 +88,42 @@ namespace Mashroo3i.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Concerns")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ExecutionScore")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FinancialScore")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("IdeaId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("MarketScore")
+                    b.Property<int>("InnovationScore")
                         .HasColumnType("integer");
 
-                    b.Property<int>("NoveltyScore")
+                    b.Property<int>("MarketScore")
                         .HasColumnType("integer");
 
                     b.Property<int>("OverallScore")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Recommendations")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Strengths")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Verdict")
                         .IsRequired()
@@ -223,6 +245,14 @@ namespace Mashroo3i.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Opportunities")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("OverallRiskLevel")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Risks")
                         .IsRequired()
                         .HasColumnType("text");
 

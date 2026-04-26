@@ -14,23 +14,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
-// JWT Service
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
-// AI - pick the active provider from config, wire it up once, done
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IAIService>(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
     var active = config["AIProvider:Active"] ?? "Groq";
-
     var settings = new ProviderSettings
     {
         ApiKey = config[$"AIProvider:{active}:ApiKey"]!,
         Model = config[$"AIProvider:{active}:Model"]!,
-        BaseUrl = config[$"AIProvider:{active}:BaseUrl"]!
+        BaseUrl = config[$"AIProvider:{active}:BaseUrl"]!,
     };
-
     return new OpenAICompatibleAIService(
         sp.GetRequiredService<IHttpClientFactory>(),
         settings,
@@ -38,9 +34,9 @@ builder.Services.AddSingleton<IAIService>(sp =>
         sp.GetRequiredService<ILogger<OpenAICompatibleAIService>>());
 });
 
-//  services
 builder.Services.AddScoped<BusinessIdeaService>();
-// JWT Authentication
+builder.Services.AddScoped<EvaluationService>();   // ← new
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -54,17 +50,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
         };
     });
 
 builder.Services.AddAuthorization();
 
-// Database
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// CORS for React frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
@@ -82,7 +76,11 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
