@@ -5,8 +5,8 @@
  * On success → /dashboard. On failure → ErrorBanner with backend message.
  */
 
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { AuthLayout } from '../../styles'
 import { useAuth } from '../../context/AuthContext'
 import { inputStyle, focusHandlers, FieldWrapper, ErrorBanner, FormCard } from './formHelpers'
@@ -17,11 +17,18 @@ const LockIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="non
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate  = useNavigate()
+  const location  = useLocation()
 
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
+
+  // Show message when api.js redirects here after a 401
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('expired') === '1') setError('Your session expired. Please sign in again.')
+  }, [location.search])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

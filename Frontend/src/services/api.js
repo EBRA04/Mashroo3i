@@ -5,47 +5,42 @@
  *
  * Shape 1 — Custom errors from controller actions (our own code):
  *   { message: "Email already in use." }
- *   → Extracted via data.message
  *
  * Shape 2 — ASP.NET ValidationProblemDetails (automatic from [ApiController]):
- *   {
- *     "title": "One or more validation errors occurred.",
- *     "errors": {
- *       "Password": ["Password must be at least 8 characters..."],
- *       "Email":    ["The Email field is not a valid e-mail address."]
- *     }
- *   }
- *   → We extract the first message from data.errors so the user sees the
- *     actual rule that failed, not the useless generic title.
+ *   { "title": "...", "errors": { "Field": ["msg"] } }
+ *
+ * Auto-logout: any 401 response wipes localStorage and redirects to /login.
+ * This handles expired tokens silently — user gets sent to login instead of
+ * seeing a confusing "Request failed (401)" error message.
  */
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5057";
 
-/**
- * Extracts a human-readable message from any error response the backend sends.
- * Priority: custom message → first validation error → generic title → fallback
- */
 function extractErrorMessage(data, status) {
-  // Shape 1: our own controllers return { message: "..." }
   if (data?.message) return data.message;
-
-  // Shape 2: ASP.NET model validation returns { errors: { Field: ["msg"] } }
-  // Grab the first error message from whichever field failed first
   if (data?.errors) {
     const firstField = Object.values(data.errors)[0];
-    if (Array.isArray(firstField) && firstField.length > 0) {
-      return firstField[0];
-    }
+    if (Array.isArray(firstField) && firstField.length > 0) return firstField[0];
   }
-
-  // Fallback: generic title or HTTP status
   return data?.title ?? `Request failed (${status})`;
 }
 
-async function request(
-  endpoint,
-  { auth = false, body, method = "GET", ...rest } = {},
-) {
+function handleExpiredSession() {
+  // Wipe everything auth-related from storage
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("userFullName");
+  localStorage.removeItem("userRole");
+
+  // Hard redirect to login — we use window.location instead of React Router
+  // here because api.js has no access to the router context, and we want to
+  // guarantee a clean state reset rather than a soft navigation.
+  // The ?expired=1 param lets LoginPage show "Session expired, please sign in again."
+  if (!window.location.pathname.startsWith("/login")) {
+    window.location.href = "/login?expired=1";
+  }
+}
+
+async function request(endpoint, { auth = false, body, method = "GET", ...rest } = {}) {
   const headers = { "Content-Type": "application/json" };
 
   if (auth) {
@@ -64,10 +59,9 @@ async function request(
   try {
     response = await fetch(`${BASE_URL}${endpoint}`, config);
   } catch {
-    // fetch() only throws on a real network failure — server down, wrong port, no internet
     const err = new Error(
       `Cannot reach the server at ${BASE_URL}. ` +
-        `Make sure the backend is running: dotnet run --launch-profile http`,
+      `Make sure the backend is running: dotnet run --launch-profile http`
     );
     err.status = 0;
     throw err;
@@ -81,6 +75,15 @@ async function request(
   }
 
   if (!response.ok) {
+    // Token expired or missing — kick the user to login automatically
+    if (response.status === 401) {
+      handleExpiredSession();
+      // Throw anyway so any in-flight promise chains stop cleanly
+      const err = new Error("Session expired. Please sign in again.");
+      err.status = 401;
+      throw err;
+    }
+
     const err = new Error(extractErrorMessage(data, response.status));
     err.status = response.status;
     err.data = data;
@@ -91,13 +94,11 @@ async function request(
 }
 
 const api = {
-  get: (endpoint, opts = {}) => request(endpoint, { ...opts, method: "GET" }),
-  post: (endpoint, opts = {}) => request(endpoint, { ...opts, method: "POST" }),
-  put: (endpoint, opts = {}) => request(endpoint, { ...opts, method: "PUT" }),
-  patch: (endpoint, opts = {}) =>
-    request(endpoint, { ...opts, method: "PATCH" }),
-  delete: (endpoint, opts = {}) =>
-    request(endpoint, { ...opts, method: "DELETE" }),
+  get:    (endpoint, opts = {}) => request(endpoint, { ...opts, method: "GET"    }),
+  post:   (endpoint, opts = {}) => request(endpoint, { ...opts, method: "POST"   }),
+  put:    (endpoint, opts = {}) => request(endpoint, { ...opts, method: "PUT"    }),
+  patch:  (endpoint, opts = {}) => request(endpoint, { ...opts, method: "PATCH"  }),
+  delete: (endpoint, opts = {}) => request(endpoint, { ...opts, method: "DELETE" }),
 };
 
 export default api;

@@ -1,26 +1,38 @@
 /**
- * AppLayout
- * ──────────────────────────────────────────────────────────────────────────
- * The main shell for authenticated pages.
- * Sidebar (left) + main content area (right).
+ * AppLayout — Shell for all authenticated pages.
  *
- * This is a placeholder for now — we'll flesh it out when we build the
- * dashboard. For the login/register sprint it's just needed so the barrel
- * export doesn't break.
+ * Replaces the old TopBar + Sidebar combo with DashNavbar, giving a clean
+ * full-width layout that's consistent with the landing page's nav style.
  *
- * Usage:
- *   <AppLayout>
- *     <DashboardPage />
- *   </AppLayout>
+ *   ┌──────────────────────────────────────────────────────────┐
+ *   │ DashNavbar: logo · Dashboard · New Idea ·  · avatar ▾  │  ← 68px sticky
+ *   ├──────────────────────────────────────────────────────────┤
+ *   │                                                          │
+ *   │             <main>{children}</main>                      │
+ *   │           (max-width 880px, centered)                    │
+ *   │                                                          │
+ *   └──────────────────────────────────────────────────────────┘
  */
+
+import DashNavbar from '../components/DashNavbar'
+import DashFooter from '../components/DashFooter'
 
 const AppLayout = ({ children }) => {
   return (
-    <div className="ds-root" style={{ minHeight: '100vh', display: 'flex' }}>
-      {/* Sidebar goes here — built in the next sprint */}
-      <main style={{ flex: 1, padding: '2rem', backgroundColor: 'var(--ds-bg)' }}>
-        {children}
+    <div className="ds-root" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f9fafb' }}>
+      <DashNavbar />
+
+      <main style={{
+        flex: 1,
+        padding: '2rem 1.5rem',
+        minWidth: 0,
+      }}>
+        <div style={{ maxWidth: '880px', margin: '0 auto' }}>
+          {children}
+        </div>
       </main>
+
+      <DashFooter />
     </div>
   )
 }
