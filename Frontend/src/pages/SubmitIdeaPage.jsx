@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import { AppLayout } from '../styles'
 import { C } from '../styles/components/DashNavbar'
 import { submitIdea } from '../services/ideaService'
+import { useCredits } from '../context/CreditsContext'
 
 /* ── Constants ────────────────────────────────────────────────────────── */
 const TITLE_MAX       = 120
@@ -111,6 +112,7 @@ function SectorCard({ sector, selected, onSelect, fullWidth = false }) {
 /* ── Page ─────────────────────────────────────────────────────────────── */
 export default function SubmitIdeaPage() {
   const navigate = useNavigate()
+  const { credits } = useCredits()
 
   const [title,       setTitle]       = useState('')
   const [description, setDescription] = useState('')
@@ -125,7 +127,8 @@ export default function SubmitIdeaPage() {
   const titleOk     = title.trim().length > 0 && title.trim().length <= TITLE_MAX
   const sectorOk    = Boolean(sector)
   const investOk    = Number(investment) > 0
-  const canSubmit   = titleOk && descOk && sectorOk && investOk && !submitting
+  const hasCredits  = credits > 0
+  const canSubmit   = titleOk && descOk && sectorOk && investOk && !submitting && hasCredits
 
   const counterColor = useMemo(() => descOk ? C.brand600 : '#f97316', [descOk])
 
@@ -306,6 +309,40 @@ export default function SubmitIdeaPage() {
               </p>
             )}
           </div>
+
+
+          {/* No credits banner */}
+          {!hasCredits && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: '1rem', flexWrap: 'wrap',
+              padding: '0.875rem 1rem',
+              background: '#fffbeb', border: '1px solid #fcd34d',
+              borderRadius: '0.5rem',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706"
+                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#92400e' }}>
+                  You have no evaluation credits. Purchase credits to submit your idea.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/buy-credits')}
+                style={{
+                  padding: '0.45rem 1rem', borderRadius: '0.5rem', border: 'none',
+                  background: '#d97706', color: '#fff',
+                  fontWeight: 700, fontSize: '0.8125rem', fontFamily: 'inherit',
+                  cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                }}
+              >
+                Buy Credits →
+              </button>
+            </div>
+          )}
 
           {/* Submit */}
           <button

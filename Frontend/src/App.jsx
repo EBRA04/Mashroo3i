@@ -1,9 +1,5 @@
 /**
  * App.jsx — Routing
- *
- * Public routes:   /  /about  /contact  /login  /register
- * Protected routes: /dashboard  /submit-idea  /profile
- * Fallback: redirect to /
  */
 
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
@@ -17,8 +13,11 @@ import LoginPage      from './pages/auth/LoginPage'
 import RegisterPage   from './pages/auth/RegisterPage'
 import DashboardPage  from './pages/DashboardPage'
 import SubmitIdeaPage from './pages/SubmitIdeaPage'
-import ProfilePage      from './pages/ProfilePage'
-import EvaluationPage  from './pages/EvaluationPage'
+import ProfilePage    from './pages/Profilepage'
+import EvaluationPage from './pages/EvaluationPage'
+import PricingPage    from './pages/Pricingpage'
+import CheckoutPage     from './pages/Checkoutpage'
+import BuyCreditsPage   from './pages/BuyCreditsPage'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth()
@@ -38,7 +37,6 @@ function PageTransition({ children }) {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-
     const el = ref.current
     if (!el) return
     el.style.opacity = '0'
@@ -57,21 +55,26 @@ function PageTransition({ children }) {
 
 export default function App() {
   const location = useLocation()
-
   return (
     <PageTransition>
       <Routes location={location}>
         <Route path="/"        element={<LandingPage />} />
         <Route path="/about"   element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/pricing" element={<PublicOnlyRoute><PricingPage /></PublicOnlyRoute>} />
 
         <Route path="/login"    element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
         <Route path="/register" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
 
-        <Route path="/dashboard"   element={<ProtectedRoute><DashboardPage  /></ProtectedRoute>} />
-        <Route path="/submit-idea" element={<ProtectedRoute><SubmitIdeaPage /></ProtectedRoute>} />
-        <Route path="/profile"     element={<ProtectedRoute><ProfilePage      /></ProtectedRoute>} />
-        <Route path="/evaluation/:ideaId" element={<ProtectedRoute><EvaluationPage /></ProtectedRoute>} />
+        <Route path="/dashboard"              element={<ProtectedRoute><DashboardPage  /></ProtectedRoute>} />
+        <Route path="/submit-idea"            element={<ProtectedRoute><SubmitIdeaPage /></ProtectedRoute>} />
+        <Route path="/profile"                element={<ProtectedRoute><ProfilePage    /></ProtectedRoute>} />
+        <Route path="/evaluation/:ideaId"     element={<ProtectedRoute><EvaluationPage /></ProtectedRoute>} />
+        <Route path="/checkout"               element={<ProtectedRoute><CheckoutPage   /></ProtectedRoute>} />
+        <Route path="/buy-credits"             element={<ProtectedRoute><BuyCreditsPage /></ProtectedRoute>} />
+
+        {/* Old subscription route → redirect to buy-credits */}
+        <Route path="/account/subscription"   element={<Navigate to="/buy-credits" replace />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

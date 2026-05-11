@@ -34,6 +34,7 @@ export default function Navbar() {
   const navLinks = [
     ['/#features', 'Features'],
     ['/about',     'About us'],
+    ['/pricing',   'Pricing'],
   ]
 
   return (

@@ -42,3 +42,6 @@ export async function listMyIdeas() {
 export async function getIdea(id) {
   return api.get(`${BASE_ENDPOINT}/${encodeURIComponent(id)}`, { auth: true });
 }
+export async function deleteIdea(id) {
+  return api.delete(`${BASE_ENDPOINT}/${encodeURIComponent(id)}`, { auth: true });
+}

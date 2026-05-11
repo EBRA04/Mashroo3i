@@ -4,12 +4,13 @@
  * but with dashboard-specific links and a profile dropdown.
  *
  * Links: Dashboard · New Idea · (profile icon)
- * Right: Avatar dropdown → My Profile / Dashboard / Submit Idea / Sign out
+ * Right: Avatar dropdown → My Profile / Subscription / Sign out
  */
 
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useCredits } from '../../context/CreditsContext'
 
 export const C = {
   brand50:  '#edfaf5',
@@ -34,8 +35,8 @@ export const C = {
 }
 
 const NAV_LINKS = [
-  { to: '/dashboard',   label: 'Dashboard' },
-  { to: '/submit-idea', label: 'Submit Idea'  },
+  { to: '/dashboard',   label: 'Dashboard'  },
+  { to: '/submit-idea', label: 'Submit Idea' },
 ]
 
 /* ── Avatar ─────────────────────────────────────────────────────────── */
@@ -82,11 +83,30 @@ const menuItemBase = {
   cursor: 'pointer',
 }
 
+/* ── Credits Badge ───────────────────────────────────────────────────── */
+function CreditsBadge({ credits }) {
+  return (
+    <span style={{
+      fontSize: '0.6rem', fontWeight: 800,
+      padding: '0.15rem 0.45rem',
+      borderRadius: '99px',
+      background: credits > 0 ? C.brand500 : C.n300,
+      color: '#fff',
+      letterSpacing: '0.05em',
+      lineHeight: 1,
+      flexShrink: 0,
+    }}>
+      {credits} {credits === 1 ? 'credit' : 'credits'}
+    </span>
+  )
+}
+
 /* ── Profile dropdown ───────────────────────────────────────────────── */
 function ProfileDropdown({ user, onLogout }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   const navigate = useNavigate()
+  const { credits } = useCredits()
 
   useEffect(() => {
     const handler = (e) => {
@@ -125,6 +145,7 @@ function ProfileDropdown({ user, onLogout }) {
       >
         <Avatar name={user?.fullName} />
         <span style={{ fontSize: '0.875rem', fontWeight: 600, color: C.n700 }}>{firstName}</span>
+        <CreditsBadge credits={credits}/>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.n400} strokeWidth="2.5" strokeLinecap="round"
           style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.15s ease', flexShrink: 0 }}>
           <polyline points="6 9 12 15 18 9"/>
@@ -134,7 +155,7 @@ function ProfileDropdown({ user, onLogout }) {
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 0.5rem)', right: 0,
-          minWidth: '210px',
+          minWidth: '220px',
           background: '#ffffff',
           border: `1px solid ${C.n200}`,
           borderRadius: '0.75rem',
@@ -142,15 +163,21 @@ function ProfileDropdown({ user, onLogout }) {
           overflow: 'hidden',
           zIndex: 100,
         }}>
+          {/* User info header */}
           <div style={{ padding: '0.875rem 1rem', borderBottom: `1px solid ${C.n100}`, display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
             <Avatar name={user?.fullName} />
-            <div>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '0.875rem', fontWeight: 700, color: C.n900, lineHeight: 1.3 }}>{user?.fullName}</div>
-              <div style={{ fontSize: '0.75rem', color: C.n500 }}>{user?.role ?? 'User'}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.1rem' }}>
+                <span style={{ fontSize: '0.75rem', color: C.n500 }}>{user?.role ?? 'User'}</span>
+                {/* Plan badge inside dropdown header */}
+<CreditsBadge credits={credits}/>
+              </div>
             </div>
           </div>
 
           <div style={{ padding: '0.375rem' }}>
+            {/* My Profile */}
             <Link to="/profile" onClick={() => setOpen(false)} style={menuItemBase}
               onMouseEnter={e => { e.currentTarget.style.background = C.n50 }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
@@ -160,8 +187,19 @@ function ProfileDropdown({ user, onLogout }) {
               My Profile
             </Link>
 
+            {/* Subscription */}
+            <Link to="/buy-credits" onClick={() => setOpen(false)} style={menuItemBase}
+              onMouseEnter={e => { e.currentTarget.style.background = C.n50 }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+              </svg>
+              <span style={{ flex: 1 }}>Buy Credits</span>
+            </Link>
+
             <div style={{ height: '1px', background: C.n100, margin: '0.375rem 0' }} />
 
+            {/* Sign out */}
             <button onClick={handleLogout} style={{ ...menuItemBase, color: '#dc2626' }}
               onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
@@ -181,8 +219,9 @@ function ProfileDropdown({ user, onLogout }) {
 export default function DashNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
   const { user, logout } = useAuth()
+  const { credits }      = useCredits()
 
   const isActive = (to) => location.pathname === to
 
@@ -229,7 +268,6 @@ export default function DashNavbar() {
               {label}
             </Link>
           ))}
-
         </div>
 
         {/* Desktop right: avatar dropdown */}
@@ -251,11 +289,15 @@ export default function DashNavbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div style={{ borderTop: `1px solid ${C.n100}`, padding: '1rem 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.375rem', background: '#fff' }}>
+          {/* User info */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: C.n50, borderRadius: '0.75rem', marginBottom: '0.375rem' }}>
             <Avatar name={user?.fullName} />
-            <div>
+            <div style={{ flex: 1 }}>
               <div style={{ fontSize: '0.9rem', fontWeight: 700, color: C.n900 }}>{user?.fullName}</div>
-              <div style={{ fontSize: '0.75rem', color: C.n500 }}>{user?.role ?? 'User'}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.1rem' }}>
+                <span style={{ fontSize: '0.75rem', color: C.n500 }}>{user?.role ?? 'User'}</span>
+                <CreditsBadge credits={credits}/>
+              </div>
             </div>
           </div>
 
@@ -272,6 +314,7 @@ export default function DashNavbar() {
             fontWeight: isActive('/profile') ? 700 : 500, color: isActive('/profile') ? C.brand600 : C.n700,
             background: isActive('/profile') ? C.brand50 : 'transparent', textDecoration: 'none',
           }}>My Profile</Link>
+
 
           <button onClick={handleMobileLogout} style={{
             marginTop: '0.25rem', padding: '0.75rem', textAlign: 'center',
