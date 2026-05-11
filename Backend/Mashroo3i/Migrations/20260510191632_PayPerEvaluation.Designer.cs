@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Mashroo3i.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260424152408_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260510191632_PayPerEvaluation")]
+    partial class PayPerEvaluation
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -209,8 +209,16 @@ namespace Mashroo3i.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("CompetitorsJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DifferentiationAnalysis")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("FatalFlaws")
                         .IsRequired()
@@ -223,7 +231,23 @@ namespace Mashroo3i.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("MarketOpportunitiesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("MarketSize")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MarketTrend")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MarketTrendReason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Saturation")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -233,6 +257,46 @@ namespace Mashroo3i.Migrations
                         .IsUnique();
 
                     b.ToTable("MarketAnalyses");
+                });
+
+            modelBuilder.Entity("Mashroo3i.Models.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TransactionRef")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("Mashroo3i.Models.SwotAnalysis", b =>
@@ -300,6 +364,11 @@ namespace Mashroo3i.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<int>("EvaluationCredits")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("Experience")
                         .IsRequired()
@@ -373,6 +442,17 @@ namespace Mashroo3i.Migrations
                         .IsRequired();
 
                     b.Navigation("BusinessIdea");
+                });
+
+            modelBuilder.Entity("Mashroo3i.Models.Payment", b =>
+                {
+                    b.HasOne("Mashroo3i.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Mashroo3i.Models.SwotAnalysis", b =>

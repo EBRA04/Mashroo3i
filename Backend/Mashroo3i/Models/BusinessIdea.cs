@@ -11,7 +11,7 @@
         public string? Usp { get; set; }
         public string BusinessType { get; set; } = "B2C";
         public string Sector { get; set; } = "other";
-        public string Provinces {  get; set; }="Amman";
+        public string Provinces { get; set; } = "Amman";
         public string? BusinessTypeReason { get; set; }
         public decimal EstimatedBudget { get; set; }
         public string Status { get; set; } = "submitted";
@@ -27,5 +27,6 @@
         public const string StatusSubmitted = "submitted";
         public const string StatusAnalyzing = "analyzing";
         public const string StatusCompleted = "completed";
+        public const string StatusFailed = "failed";
     }
 }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Mashroo3i.Controllers
 {
@@ -47,10 +48,22 @@ namespace Mashroo3i.Controllers
             if (idea.Status == BusinessIdea.StatusAnalyzing)
                 return Accepted(new { message = "Evaluation already in progress.", idea.Status });
 
+            // ── Credits check ─────────────────────────────────────────────
+            var user = await _db.Users.FindAsync(userId.Value);
+            if (user == null) return Unauthorized();
+
+            if (user.EvaluationCredits <= 0)
+                return BadRequest(new
+                {
+                    message = "You have no evaluation credits. Please purchase credits to continue.",
+                    code = "NO_CREDITS"
+                });
+
+            // Deduct one credit before starting the background job
+            user.EvaluationCredits -= 1;
+            await _db.SaveChangesAsync();
+
             // Fire-and-forget with a fresh DI scope.
-            // We can't use the request's EvaluationService instance here because
-            // the request scope (and its DbContext) will be disposed once we return 202.
-            // CreateAsyncScope() gives the background task its own independent lifetime.
             _ = Task.Run(async () =>
             {
                 await using var scope = _scopeFactory.CreateAsyncScope();
@@ -84,6 +97,7 @@ namespace Mashroo3i.Controllers
             var idea = await _db.BusinessIdeas
                 .Include(i => i.EvaluationScores)
                 .Include(i => i.SwotAnalysis)
+                .Include(i => i.MarketAnalysis)          // ← added
                 .FirstOrDefaultAsync(i => i.IdeaId == ideaId && i.UserId == userId.Value);
 
             if (idea == null) return NotFound(new { message = "Idea not found." });
@@ -92,6 +106,7 @@ namespace Mashroo3i.Controllers
             {
                 ideaId = idea.IdeaId,
                 status = idea.Status,
+
                 scoring = idea.EvaluationScores == null ? null : new
                 {
                     idea.EvaluationScores.OverallScore,
@@ -105,6 +120,7 @@ namespace Mashroo3i.Controllers
                     concerns = idea.EvaluationScores.Concerns.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
                     recommendations = idea.EvaluationScores.Recommendations.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
                 },
+
                 swot = idea.SwotAnalysis == null ? null : new
                 {
                     idea.SwotAnalysis.Strengths,
@@ -113,14 +129,43 @@ namespace Mashroo3i.Controllers
                     idea.SwotAnalysis.Threats,
                     idea.SwotAnalysis.Risks,
                     idea.SwotAnalysis.OverallRiskLevel,
+                },
+
+                market = idea.MarketAnalysis == null ? null : new
+                {
+                    idea.MarketAnalysis.MarketSize,
+                    idea.MarketAnalysis.Saturation,
+                    idea.MarketAnalysis.MarketTrend,
+                    idea.MarketAnalysis.MarketTrendReason,
+                    idea.MarketAnalysis.FatalFlaws,
+                    idea.MarketAnalysis.LikelyFailureMode,
+                    idea.MarketAnalysis.CompetitorAnalysis,
+                    idea.MarketAnalysis.DifferentiationAnalysis,
+                    // Deserialize JSON columns back to arrays for the frontend
+                    competitors = ParseJson(idea.MarketAnalysis.CompetitorsJson),
+                    marketOpportunities = ParseJson(idea.MarketAnalysis.MarketOpportunitiesJson),
+                    analyzedAt = idea.MarketAnalysis.CreatedAt,
                 }
             });
         }
+
+        // ── Helpers ───────────────────────────────────────────────────────────
 
         private Guid? GetUserId()
         {
             var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             return Guid.TryParse(claim, out var id) ? id : null;
+        }
+
+        /// <summary>
+        /// Safely deserializes a JSON array string back to a list of objects.
+        /// Returns an empty list instead of throwing if the value is null or malformed.
+        /// </summary>
+        private static List<object> ParseJson(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return new();
+            try { return JsonSerializer.Deserialize<List<object>>(json) ?? new(); }
+            catch { return new(); }
         }
     }
 }

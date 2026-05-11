@@ -35,7 +35,8 @@ builder.Services.AddSingleton<IAIService>(sp =>
 });
 
 builder.Services.AddScoped<BusinessIdeaService>();
-builder.Services.AddScoped<EvaluationService>();   // ← new
+builder.Services.AddScoped<EvaluationService>();
+builder.Services.AddScoped<IFakePaymentProvider, FakePaymentProvider>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

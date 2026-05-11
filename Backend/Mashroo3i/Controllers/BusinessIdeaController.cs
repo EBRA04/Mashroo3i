@@ -1,5 +1,6 @@
 ﻿using Mashroo3i.Data;
 using Mashroo3i.DTOs.BusinessIdea;
+using Mashroo3i.Models;
 using Mashroo3i.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -79,6 +80,27 @@ namespace Mashroo3i.Controllers
             if (idea == null) return NotFound();
 
             return Ok(idea);
+        }
+
+        // DELETE /api/business-idea/{id}
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
+
+            var idea = await _db.BusinessIdeas
+                .FirstOrDefaultAsync(i => i.IdeaId == id && i.UserId == userId.Value);
+
+            if (idea == null) return NotFound(new { message = "Idea not found." });
+
+            if (idea.Status == BusinessIdea.StatusAnalyzing)
+                return Conflict(new { message = "Cannot delete an idea while it is being analyzed. Wait for evaluation to finish." });
+
+            _db.BusinessIdeas.Remove(idea);
+            await _db.SaveChangesAsync();
+
+            return NoContent(); // 204
         }
 
         private Guid? GetUserId()

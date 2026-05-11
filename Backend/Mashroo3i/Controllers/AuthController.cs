@@ -34,8 +34,8 @@ namespace Mashroo3i.Controllers
                 Email = dto.Email.ToLower(),
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Education = dto.Education!,
-                Experience = dto.Experience !,
-                BusinessInterest = dto.BusinessInterest !,
+                Experience = dto.Experience!,
+                BusinessInterest = dto.BusinessInterest!,
                 Role = "Entrepreneur"
             };
 
@@ -58,12 +58,39 @@ namespace Mashroo3i.Controllers
                 return Unauthorized(new { message = "Account is disabled." });
 
             var token = _jwt.GenerateAccessToken(user);
-            //Ebra: because AuthResponseDto is a class we need to assign the properties
+
             return Ok(new AuthResponseDto
             {
                 AccessToken = token,
                 Role = user.Role,
                 FullName = user.FullName,
+            });
+        }
+
+        // GET /api/auth/me  — returns the full profile of the currently logged-in user
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> Me()
+        {
+            var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(claim, out var userId))
+                return Unauthorized();
+
+            var user = await _db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null) return NotFound();
+
+            return Ok(new
+            {
+                user.FullName,
+                user.Email,
+                user.Role,
+                user.Education,
+                user.Experience,
+                user.BusinessInterest,
+                user.CreatedAt,
             });
         }
     }
