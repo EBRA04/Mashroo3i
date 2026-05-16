@@ -1125,11 +1125,31 @@ export default function EvaluationPage() {
       {/* Page Header */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
+<<<<<<< HEAD
           <Link to="/dashboard"
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem', fontWeight: 600, color: C.n500, textDecoration: 'none', marginBottom: '0.625rem', transition: 'color 0.15s ease' }}
             onMouseEnter={e => e.currentTarget.style.color = C.brand500}
             onMouseLeave={e => e.currentTarget.style.color = C.n500}
           >← Back to Dashboard</Link>
+=======
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem' }}>
+            <Link to="/dashboard"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem', fontWeight: 600, color: C.n500, textDecoration: 'none', transition: 'color 0.15s ease' }}
+              onMouseEnter={e => e.currentTarget.style.color = C.brand500}
+              onMouseLeave={e => e.currentTarget.style.color = C.n500}
+            >← Back to Dashboard</Link>
+            {phase === 'completed' && (
+              <Link to={`/financial-projections/${ideaId}`}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem', fontWeight: 700, color: C.brand600, textDecoration: 'none', padding: '0.3rem 0.75rem', background: C.brand50, border: `1px solid ${C.brand200}`, borderRadius: 99, transition: 'all 0.15s ease' }}
+                onMouseEnter={e => { e.currentTarget.style.background = C.brand100; e.currentTarget.style.borderColor = C.brand300 }}
+                onMouseLeave={e => { e.currentTarget.style.background = C.brand50;  e.currentTarget.style.borderColor = C.brand200 }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Financial Projections
+              </Link>
+            )}
+          </div>
+>>>>>>> origin/claude-plan
           <h1 style={{ fontSize: 'clamp(1.375rem, 3vw, 1.75rem)', fontWeight: 800, color: C.n900, margin: '0 0 0.25rem', letterSpacing: '-0.02em' }}>Idea Evaluation</h1>
           <p style={{ fontSize: '0.875rem', color: C.n500, margin: 0 }}>AI-powered scoring, SWOT, and market analysis</p>
         </div>
