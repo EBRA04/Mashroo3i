@@ -17,12 +17,9 @@ import ProfilePage    from './pages/Profilepage'
 import EvaluationPage from './pages/EvaluationPage'
 import PricingPage    from './pages/Pricingpage'
 import CheckoutPage     from './pages/Checkoutpage'
-<<<<<<< HEAD
 import BuyCreditsPage   from './pages/BuyCreditsPage'
-=======
 import BuyCreditsPage              from './pages/BuyCreditsPage'
 import FinancialProjectionsPage   from './pages/FinancialProjectionsPage'
->>>>>>> origin/claude-plan
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth()
@@ -75,10 +72,7 @@ export default function App() {
         <Route path="/submit-idea"            element={<ProtectedRoute><SubmitIdeaPage /></ProtectedRoute>} />
         <Route path="/profile"                element={<ProtectedRoute><ProfilePage    /></ProtectedRoute>} />
         <Route path="/evaluation/:ideaId"     element={<ProtectedRoute><EvaluationPage /></ProtectedRoute>} />
-<<<<<<< HEAD
-=======
         <Route path="/financial-projections/:ideaId" element={<ProtectedRoute><FinancialProjectionsPage /></ProtectedRoute>} />
->>>>>>> origin/claude-plan
         <Route path="/checkout"               element={<ProtectedRoute><CheckoutPage   /></ProtectedRoute>} />
         <Route path="/buy-credits"             element={<ProtectedRoute><BuyCreditsPage /></ProtectedRoute>} />
 
