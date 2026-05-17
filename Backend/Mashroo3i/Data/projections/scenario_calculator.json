@@ -1,0 +1,164 @@
+{
+  "_meta": {
+    "file": "scenario_calculator.json",
+    "purpose": "Calculation rules for scenario engine. AI reads this to compute Conservative/Realistic/Optimistic outputs.",
+    "version": "1.0.0",
+    "lastUpdated": "2026-04-07"
+  },
+  "workflow": [
+    "1. Compute Realistic base case from sector benchmarks + user inputs",
+    "2. Apply Conservative multipliers (revenue ×0.5, cost ×1.15, CAC ×1.3, churn ×1.5)",
+    "3. Apply Optimistic multipliers (revenue ×1.4, cost ×0.95, CAC ×0.8, churn ×0.7)",
+    "4. Apply ramp curve to ALL scenarios (month 1 = 20% of full revenue)",
+    "5. Apply seasonal adjustments per sector after multipliers",
+    "6. Compute LTV, CAC ratio, break-even, runway for all 3 scenarios",
+    "7. Run red flag checks on each scenario",
+    "8. Output table + summary + action items"
+  ],
+  "formulas": {
+    "ltv": {
+      "formula": "LTV = (AOV × GrossMargin%) ÷ MonthlyChurnRate%",
+      "example": "AOV=40 JOD, GM=48%, Churn=30% → LTV = (40×0.48)÷0.30 = 64 JOD",
+      "unit": "JOD"
+    },
+    "cacRatio": {
+      "formula": "LTV ÷ CAC",
+      "interpretation": {
+        "<1": "DANGER",
+        "1–3": "WARNING",
+        ">3": "HEALTHY"
+      }
+    },
+    "breakEven": {
+      "formula": "Find month N where: Σ(NetProfit M1..MN) ≥ 0",
+      "output": "Integer month number (1–36). Flag DANGER if >36."
+    },
+    "cashRunway": {
+      "formula": "startingCapital ÷ avgMonthlyBurn",
+      "avgMonthlyBurn": "Average monthly net outflow in pre-profit months",
+      "output": "Months. DANGER < 3. WARNING < 6."
+    },
+    "payback": {
+      "formula": "startingCapital ÷ avgMonthlyNetProfit (post break-even months only)"
+    }
+  },
+  "sectorSeasonality": {
+    "food_and_beverage": {
+      "ramadan_months_3_4": {
+        "multiplier": 1.35,
+        "note": "Iftar demand surge"
+      },
+      "summer_cafe_months_6_7_8": {
+        "multiplier": 0.8,
+        "note": "Heat reduces foot traffic"
+      }
+    },
+    "retail_ecommerce": {
+      "backToSchool_months_8_9": {
+        "multiplier": 1.2
+      },
+      "newYear_months_12_1": {
+        "multiplier": 1.3
+      },
+      "codRefusalBuffer_pct": 12
+    },
+    "education_training": {
+      "backToSchool_months_8_9": {
+        "multiplier": 1.5
+      },
+      "tawjihi_months_4_5": {
+        "multiplier": 1.4
+      },
+      "summerSlump_months_6_7": {
+        "multiplier": 0.6
+      }
+    },
+    "health_wellness": {
+      "januaryResolution_month_1": {
+        "multiplier_gym": 1.4
+      },
+      "summerChurn_months_6_7_8": {
+        "multiplier_gym": 0.75
+      },
+      "ramadan_months_3_4": {
+        "multiplier_gym": 0.7
+      }
+    },
+    "professional_services": {
+      "ramadanSlowdown_months_3_4": {
+        "multiplier": 0.8,
+        "note": "B2B decision-making slows"
+      }
+    },
+    "tech_software": {
+      "note": "No strong seasonality for tech/software."
+    }
+  },
+  "redFlagChecklist": {
+    "instructions": "Run AFTER computing each scenario. Return list of triggered flags.",
+    "checks": [
+      {
+        "id": "RF01",
+        "metric": "ltvCacRatio",
+        "danger": "<1",
+        "warning": "<3"
+      },
+      {
+        "id": "RF02",
+        "metric": "grossMargin_pct",
+        "danger": "<15",
+        "warning": "<25"
+      },
+      {
+        "id": "RF03",
+        "metric": "netMargin_pct",
+        "danger": "<0",
+        "warning": "<8"
+      },
+      {
+        "id": "RF04",
+        "metric": "breakEvenMonth",
+        "danger": ">36",
+        "warning": ">18"
+      },
+      {
+        "id": "RF05",
+        "metric": "monthlyChurn_pct",
+        "danger": ">50",
+        "warning": ">35"
+      },
+      {
+        "id": "RF06",
+        "metric": "cashRunway_months",
+        "danger": "<1",
+        "warning": "<3"
+      },
+      {
+        "id": "RF07",
+        "metric": "clientConcentration_pct",
+        "danger": ">70",
+        "warning": ">50",
+        "sectors": [
+          "professional_services",
+          "tech_software"
+        ]
+      }
+    ]
+  },
+  "outputRules": {
+    "alwaysShow": [
+      "Conservative",
+      "Realistic",
+      "Optimistic"
+    ],
+    "highlightWorstMetric": "Bold the single worst KPI in the Realistic scenario",
+    "actionItems": "End with exactly 3 bullet-point recommendations targeting the weakest areas",
+    "language": "Match user language: Arabic or English. Do not mix.",
+    "jordanTips": [
+      "If LTV:CAC < 3 → suggest switching from paid ads to Instagram organic or referral program",
+      "If break-even > 12 months → recommend cloud kitchen or home-based model to cut rent",
+      "If churn > 30% → suggest loyalty card, WhatsApp retention messaging, referral incentives",
+      "If cash runway < 6 months → flag urgency to either raise angel funding or reduce team size"
+    ]
+  }
+}
