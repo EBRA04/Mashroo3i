@@ -1125,11 +1125,6 @@ export default function EvaluationPage() {
       {/* Page Header */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <Link to="/dashboard"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem', fontWeight: 600, color: C.n500, textDecoration: 'none', marginBottom: '0.625rem', transition: 'color 0.15s ease' }}
-            onMouseEnter={e => e.currentTarget.style.color = C.brand500}
-            onMouseLeave={e => e.currentTarget.style.color = C.n500}
-          >← Back to Dashboard</Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem' }}>
             <Link to="/dashboard"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem', fontWeight: 600, color: C.n500, textDecoration: 'none', transition: 'color 0.15s ease' }}
