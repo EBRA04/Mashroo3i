@@ -21,6 +21,7 @@ namespace Mashroo3i.Data
             builder.Entity<User>(e =>
             {
                 e.HasKey(u => u.Id);
+                e.Property(u => u.Id).HasColumnName("Id");
                 e.HasIndex(u => u.Email).IsUnique();
                 e.Property(u => u.Email).IsRequired().HasMaxLength(255);
                 e.Property(u => u.FullName).IsRequired().HasMaxLength(100);

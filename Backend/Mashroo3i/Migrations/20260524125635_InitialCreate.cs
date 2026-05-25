@@ -24,6 +24,7 @@ namespace Mashroo3i.Migrations
                     Experience = table.Column<string>(type: "text", nullable: false),
                     BusinessInterest = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                    EvaluationCredits = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -62,21 +63,23 @@ namespace Mashroo3i.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Subscriptions",
+                name: "Payments",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Plan = table.Column<int>(type: "integer", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Currency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
+                    Provider = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
-                    StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    TransactionRef = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Subscriptions", x => x.Id);
+                    table.PrimaryKey("PK_Payments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Subscriptions_Users_UserId",
+                        name: "FK_Payments_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -119,18 +122,17 @@ namespace Mashroo3i.Migrations
                     PlanId = table.Column<Guid>(type: "uuid", nullable: false),
                     IdeaId = table.Column<Guid>(type: "uuid", nullable: false),
                     InitialInvestment = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    MonthlyRevenue = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     MonthlyCosts = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    BreakEvenMonths = table.Column<int>(type: "integer", nullable: false),
-                    RoiPercentage = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    MonthlyProfit = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    TicketSize = table.Column<decimal>(type: "numeric", nullable: false),
+                    CustomersPerMonth = table.Column<decimal>(type: "numeric", nullable: false),
                     GrossMarginPct = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    MonthlyGrowthRate = table.Column<decimal>(type: "numeric", nullable: false),
+                    MonthlyRevenue = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    MonthlyProfit = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    RoiPercentage = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     BreakEvenUnits = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    LTV = table.Column<decimal>(type: "numeric", nullable: true),
-                    CAC = table.Column<decimal>(type: "numeric", nullable: true),
-                    LtvCacRatio = table.Column<decimal>(type: "numeric", nullable: true),
-                    ARR = table.Column<decimal>(type: "numeric", nullable: true),
-                    FinancialSummary = table.Column<string>(type: "text", nullable: true),
+                    InsightsJson = table.Column<string>(type: "text", nullable: true),
+                    InsightsInputHash = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -198,37 +200,6 @@ namespace Mashroo3i.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "Payments",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    SubscriptionId = table.Column<Guid>(type: "uuid", nullable: true),
-                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    Currency = table.Column<string>(type: "character varying(3)", maxLength: 3, nullable: false),
-                    Provider = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false),
-                    TransactionRef = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Payments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Payments_Subscriptions_SubscriptionId",
-                        column: x => x.SubscriptionId,
-                        principalTable: "Subscriptions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                    table.ForeignKey(
-                        name: "FK_Payments_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_BusinessIdeas_UserId",
                 table: "BusinessIdeas",
@@ -253,20 +224,9 @@ namespace Mashroo3i.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Payments_SubscriptionId",
-                table: "Payments",
-                column: "SubscriptionId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Payments_UserId",
                 table: "Payments",
                 column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Subscriptions_UserId",
-                table: "Subscriptions",
-                column: "UserId",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SwotAnalyses_IdeaId",
@@ -298,9 +258,6 @@ namespace Mashroo3i.Migrations
 
             migrationBuilder.DropTable(
                 name: "SwotAnalyses");
-
-            migrationBuilder.DropTable(
-                name: "Subscriptions");
 
             migrationBuilder.DropTable(
                 name: "BusinessIdeas");

@@ -498,6 +498,62 @@
   transform: scaleX(-1);
 }
 
+/* ════════════════════════════════════════════════════════════════════════════
+   PRINT STYLES — hide all chrome, let content breathe
+   ════════════════════════════════════════════════════════════════════════════ */
+@media print {
+  /* Reset page margins and background */
+  @page {
+    margin: 1.5cm 1.2cm;
+    size: A4 portrait;
+  }
+
+  /* Kill the sticky navbar — this is the main culprit */
+  nav,
+  footer,
+  .ds-footer,
+  [data-print="hide"] {
+    display: none !important;
+  }
+
+  /* Make the shell layout flat for print */
+  .ds-root,
+  body,
+  html {
+    background: #fff !important;
+    min-height: unset !important;
+  }
+
+  /* Remove layout padding so content uses full page width */
+  main {
+    padding: 0 !important;
+  }
+
+  main > div {
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  /* Cards: remove shadows, keep borders */
+  .fp-card {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Prevent orphaned cards across pages */
+  .fp-card + .fp-card {
+    margin-top: 0.75rem;
+  }
+
+  /* Animations off */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 /* ── Utility helpers ────────────────────────────────────────────────────────*/
 .ds-divider {
   height: 1px;

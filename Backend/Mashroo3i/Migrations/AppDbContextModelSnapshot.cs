@@ -143,23 +143,14 @@ namespace Mashroo3i.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<decimal?>("ARR")
-                        .HasColumnType("numeric");
-
-                    b.Property<int>("BreakEvenMonths")
-                        .HasColumnType("integer");
-
                     b.Property<decimal>("BreakEvenUnits")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal?>("CAC")
-                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("FinancialSummary")
-                        .HasColumnType("text");
+                    b.Property<decimal>("CustomersPerMonth")
+                        .HasColumnType("numeric");
 
                     b.Property<decimal>("GrossMarginPct")
                         .HasColumnType("decimal(18,2)");
@@ -170,14 +161,17 @@ namespace Mashroo3i.Migrations
                     b.Property<decimal>("InitialInvestment")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal?>("LTV")
-                        .HasColumnType("numeric");
+                    b.Property<string>("InsightsInputHash")
+                        .HasColumnType("text");
 
-                    b.Property<decimal?>("LtvCacRatio")
-                        .HasColumnType("numeric");
+                    b.Property<string>("InsightsJson")
+                        .HasColumnType("text");
 
                     b.Property<decimal>("MonthlyCosts")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MonthlyGrowthRate")
+                        .HasColumnType("numeric");
 
                     b.Property<decimal>("MonthlyProfit")
                         .HasColumnType("decimal(18,2)");
@@ -187,6 +181,9 @@ namespace Mashroo3i.Migrations
 
                     b.Property<decimal>("RoiPercentage")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TicketSize")
+                        .HasColumnType("numeric");
 
                     b.HasKey("PlanId");
 
@@ -344,7 +341,8 @@ namespace Mashroo3i.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("Id");
 
                     b.Property<string>("BusinessInterest")
                         .IsRequired()

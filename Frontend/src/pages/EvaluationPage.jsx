@@ -13,6 +13,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { AppLayout } from '../styles'
 import { C } from '../styles/components/DashNavbar'
 import { startEvaluation, getEvaluationResults } from '../services/evaluationService'
+import { FinancialProjectionsWizard } from './FinancialProjectionsPage'
 import { useCredits } from '../context/CreditsContext'
 
 const POLL_MS = 3000
@@ -362,7 +363,7 @@ function VerdictBadge({ verdict }) {
   )
 }
 
-function ConcernItem({ text }) {
+function ConcernItem({ text, stretch = false }) {
   // Split "Label: body" into bold label + normal body
   const colonIdx = text.indexOf(': ')
   const label = colonIdx > 0 ? text.slice(0, colonIdx) : null
@@ -372,7 +373,8 @@ function ConcernItem({ text }) {
       display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
       padding: '0.875rem 1rem', borderRadius: '0.5rem',
       background: '#fff7ed', border: '1px solid #fed7aa',
-      marginBottom: '0.5rem',
+      marginBottom: stretch ? 0 : '0.5rem',
+      height: stretch ? '100%' : 'auto', boxSizing: 'border-box',
     }}>
       <span style={{
         flexShrink: 0, width: '20px', height: '20px', borderRadius: '50%',
@@ -388,7 +390,7 @@ function ConcernItem({ text }) {
   )
 }
 
-function ActionItem({ text, index }) {
+function ActionItem({ text, index, stretch = false }) {
   // Split "Label: body" into bold label + normal body
   const colonIdx = text.indexOf(': ')
   const label = colonIdx > 0 ? text.slice(0, colonIdx) : null
@@ -398,7 +400,8 @@ function ActionItem({ text, index }) {
       display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
       padding: '0.875rem 1rem', borderRadius: '0.5rem',
       background: '#f0fdf9', border: `1px solid ${C.brand200}`,
-      marginBottom: '0.5rem',
+      marginBottom: stretch ? 0 : '0.5rem',
+      height: stretch ? '100%' : 'auto', boxSizing: 'border-box',
     }}>
       <span style={{
         flexShrink: 0, width: '22px', height: '22px', borderRadius: '50%',
@@ -657,15 +660,16 @@ function OpportunityCarousel({ opportunities }) {
 
 function TabBar({ active, onChange, scoringDone, swotDone, marketDone }) {
   const tabs = [
-    { id: 'scoring', label: 'AI Evaluation', icon: <IconScore/> },
-    { id: 'swot',    label: 'SWOT & Risk',   icon: <IconChart/> },
-    { id: 'market',  label: 'Market',        icon: <IconMarket/> },
+    { id: 'scoring',   label: 'AI Evaluation',         icon: <IconScore/>  },
+    { id: 'swot',      label: 'SWOT & Risk',            icon: <IconChart/>  },
+    { id: 'market',    label: 'Market',                 icon: <IconMarket/> },
+    { id: 'financial', label: 'Financial Projections',  icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
   ]
   return (
     <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '1.25rem', background: '#f3f4f6', borderRadius: '0.75rem', padding: '0.25rem' }}>
       {tabs.map(t => {
         const isActive = active === t.id
-        const isLocked = (t.id === 'swot' && !swotDone) || (t.id === 'market' && !marketDone)
+        const isLocked = (t.id === 'swot' && !swotDone) || (t.id === 'market' && !marketDone) || (t.id === 'financial' && !marketDone)
         return (
           <button
             key={t.id}
@@ -779,11 +783,12 @@ function ScoringTab({ scoring, onViewSwot, swotReady }) {
         )}
       </Card>
 
-      {/* Concerns + Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-        {/* Concerns */}
-        <Card style={{ padding: '1.125rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+      {/* Concerns + Actions — paired row layout so each concern matches its action's height */}
+      <div style={{ marginBottom: '1rem' }}>
+
+        {/* Column headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 1rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
             <h2 style={{ fontSize: '0.9375rem', fontWeight: 800, color: C.n900, margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <span style={{ color: '#f97316', fontSize: '0.8rem', fontWeight: 800 }}>!</span> Concerns
             </h2>
@@ -791,12 +796,7 @@ function ScoringTab({ scoring, onViewSwot, swotReady }) {
               {concerns.length} flagged
             </span>
           </div>
-          {concerns.map((c, i) => <ConcernItem key={i} text={c}/>)}
-        </Card>
-
-        {/* Recommended Actions */}
-        <Card style={{ padding: '1.125rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 1rem', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
             <h2 style={{ fontSize: '0.9375rem', fontWeight: 800, color: C.n900, margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <span style={{ color: C.brand500, display: 'flex', alignItems: 'center' }}><IconBulb/></span> Actions
             </h2>
@@ -804,8 +804,26 @@ function ScoringTab({ scoring, onViewSwot, swotReady }) {
               {recs.length} steps
             </span>
           </div>
-          {recs.map((r, i) => <ActionItem key={i} text={r} index={i}/>)}
-        </Card>
+        </div>
+
+        {/* Paired rows — concern[i] and action[i] share the same row and stretch to match */}
+        {Array.from({ length: Math.max(concerns.length, recs.length) }).map((_, i) => (
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.5rem', alignItems: 'stretch' }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {concerns[i]
+                ? <ConcernItem text={concerns[i]} stretch />
+                : <div style={{ flex: 1, background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '0.5rem', opacity: 0.25 }} />
+              }
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {recs[i]
+                ? <ActionItem text={recs[i]} index={i} stretch />
+                : <div style={{ flex: 1, background: '#f0fdf9', border: `1px solid ${C.brand200}`, borderRadius: '0.5rem', opacity: 0.25 }} />
+              }
+            </div>
+          </div>
+        ))}
+
       </div>
 
       {/* CTA */}
@@ -903,7 +921,7 @@ function SwotTab({ swot, onViewMarket, marketReady }) {
 // Tab 3 — MarketTab  (clean, no inline SourceRow)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function MarketTab({ market: m }) {
+function MarketTab({ market: m, onViewFinancial }) {
   const analyzedAt    = fmtDate(m.analyzedAt)
   const satColor      = (SAT_CFG[m.saturation] || SAT_CFG.MEDIUM).color
   const competitors   = Array.isArray(m.competitors) ? m.competitors : []
@@ -1013,8 +1031,321 @@ function MarketTab({ market: m }) {
         </div>
       )}
 
+      {/* CTA → Financial Projections */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+        <button
+          onClick={onViewFinancial}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.375rem', borderRadius: '0.625rem', border: 'none', background: `linear-gradient(180deg, ${C.brand500} 0%, ${C.brand600} 100%)`, color: '#fff', fontWeight: 700, fontSize: '0.9375rem', fontFamily: 'inherit', cursor: 'pointer', boxShadow: `0 4px 14px ${C.brand500}35`, transition: 'all 0.15s ease' }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
+        >
+          View Financial Projections
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+      </div>
+
       <MethodologyFooter tab="market" analyzedAt={analyzedAt}/>
     </>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Full Report Print Component — hidden on screen, shown only during print
+// ─────────────────────────────────────────────────────────────────────────────
+
+const fmtN = (n) => new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(n ?? 0))
+
+const PRINT_CSS = `
+  @media screen { .eval-print-only { display: none !important; } }
+  @media print  {
+    .eval-screen-only { display: none !important; }
+    .eval-print-only  { display: block !important; }
+    nav, footer { display: none !important; }
+    @page { margin: 1.4cm 1.2cm; size: A4 portrait; }
+    body, html { background: #fff !important; }
+    main { padding: 0 !important; }
+    main > div { max-width: 100% !important; margin: 0 !important; }
+    * { animation: none !important; transition: none !important; }
+    .rpt-card { page-break-inside: avoid; break-inside: avoid; box-shadow: none !important; }
+    .rpt-avoid-break { page-break-inside: avoid; break-inside: avoid; }
+    .rpt-page-break  { page-break-before: always; break-before: always; }
+  }
+`
+
+function RptSection({ title, children, pageBreak = false }) {
+  return (
+    <div className={pageBreak ? 'rpt-page-break' : ''} style={{ marginBottom: '1.25rem' }}>
+      <div style={{ borderBottom: `2px solid ${C.brand500}`, paddingBottom: '0.35rem', marginBottom: '0.75rem' }}>
+        <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: C.n900, letterSpacing: '-0.01em' }}>{title}</h2>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function RptCard({ children, style = {} }) {
+  return (
+    <div className="rpt-card" style={{
+      background: '#fff', border: '1px solid #e5e7eb', borderRadius: '0.625rem',
+      padding: '0.875rem 1rem', marginBottom: '0.625rem', ...style,
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function RptLabel({ children }) {
+  return <div style={{ fontSize: '0.65rem', fontWeight: 700, color: C.n400, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.2rem' }}>{children}</div>
+}
+
+function RptValue({ children, color }) {
+  return <div style={{ fontSize: '1rem', fontWeight: 800, color: color || C.n900 }}>{children}</div>
+}
+
+function FullReportPrint({ scoring, swot, market, financialReport }) {
+  const { inputs, projections, insights, sectorLabel } = financialReport
+  const riskCards   = parseRisks(swot?.risks ?? '')
+  const competitors = Array.isArray(market?.competitors) ? market.competitors : []
+  const opps        = Array.isArray(market?.marketOpportunities) ? market.marketOpportunities : []
+  const swotFields  = ['strengths','weaknesses','opportunities','threats']
+  const swotCfg     = { strengths: { label: 'Strengths', color: C.brand500 }, weaknesses: { label: 'Weaknesses', color: '#ef4444' }, opportunities: { label: 'Opportunities', color: '#0ea5e9' }, threats: { label: 'Threats', color: '#f59e0b' } }
+  const verdict     = projections.roi >= 100 ? 'Strong' : projections.roi >= 30 ? 'Promising' : projections.roi > 0 ? 'Marginal' : 'High Risk'
+  const vColor      = projections.roi >= 30 ? C.brand500 : projections.roi > 0 ? '#f59e0b' : '#ef4444'
+
+  return (
+    <div className="eval-print-only" style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: '0.875rem', color: C.n900, lineHeight: 1.5 }}>
+      <style>{PRINT_CSS}</style>
+
+      {/* Cover header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', paddingBottom: '0.75rem', borderBottom: `1px solid ${C.n200}` }}>
+        <div>
+          <div style={{ fontSize: '0.65rem', fontWeight: 700, color: C.n400, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.2rem' }}>Mashroo3i — Full Evaluation Report</div>
+          <div style={{ fontSize: '1.375rem', fontWeight: 800, color: C.n900, letterSpacing: '-0.02em' }}>Business Idea Evaluation</div>
+          <div style={{ fontSize: '0.75rem', color: C.n500, marginTop: '0.2rem' }}>Generated {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.3rem 0.75rem', borderRadius: '99px', background: verdictColor(scoring?.verdict) + '18', border: `1px solid ${verdictColor(scoring?.verdict)}40`, color: verdictColor(scoring?.verdict), fontSize: '0.8rem', fontWeight: 700 }}>
+            {scoring?.verdict}
+          </div>
+          <div style={{ fontSize: '2rem', fontWeight: 900, color: scoreColor(scoring?.overallScore), marginTop: '0.25rem', lineHeight: 1 }}>{scoring?.overallScore}<span style={{ fontSize: '0.9rem', fontWeight: 600, color: C.n400 }}>/100</span></div>
+          <div style={{ fontSize: '0.65rem', color: C.n400, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Overall Score</div>
+        </div>
+      </div>
+
+      {/* ── Section 1: AI Evaluation Score ── */}
+      <RptSection title="AI Evaluation Score">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '0.625rem' }}>
+          {[
+            { label: 'Market Opportunity', score: scoring.marketScore },
+            { label: 'Financial Viability', score: scoring.financialScore },
+            { label: 'Execution', score: scoring.executionScore },
+            { label: 'Innovation / USP', score: scoring.innovationScore },
+          ].map(({ label, score }) => (
+            <div key={label} className="rpt-card" style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '0.625rem 0.75rem' }}>
+              <RptLabel>{label}</RptLabel>
+              <RptValue color={scoreColor(score)}>{score}</RptValue>
+              <div style={{ marginTop: '0.35rem', height: '4px', background: '#e5e7eb', borderRadius: '99px' }}>
+                <div style={{ height: '100%', width: `${score}%`, background: scoreColor(score), borderRadius: '99px' }}/>
+              </div>
+            </div>
+          ))}
+        </div>
+        {scoring.summary && (
+          <div style={{ padding: '0.75rem 1rem', background: '#f9fafb', borderLeft: `3px solid ${C.brand500}`, borderRadius: '0 0.375rem 0.375rem 0', fontSize: '0.875rem', color: C.n700, lineHeight: 1.6 }}>{scoring.summary}</div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.625rem' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f97316', marginBottom: '0.35rem' }}>⚠ Concerns</div>
+            {(scoring.concerns ?? []).map((c, i) => {
+              const ci = c.indexOf(': '); const lbl = ci > 0 ? c.slice(0, ci) : null; const body = ci > 0 ? c.slice(ci + 2) : c
+              return <div key={i} style={{ fontSize: '0.8rem', color: C.n700, lineHeight: 1.55, marginBottom: '0.4rem', paddingLeft: '0.5rem', borderLeft: '2px solid #fed7aa' }}>{lbl && <strong style={{ color: C.n900 }}>{lbl}: </strong>}{body}</div>
+            })}
+          </div>
+          <div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: C.brand600, marginBottom: '0.35rem' }}>✓ Recommendations</div>
+            {(scoring.recommendations ?? []).map((r, i) => {
+              const ci = r.indexOf(': '); const lbl = ci > 0 ? r.slice(0, ci) : null; const body = ci > 0 ? r.slice(ci + 2) : r
+              return <div key={i} style={{ fontSize: '0.8rem', color: C.n700, lineHeight: 1.55, marginBottom: '0.4rem', paddingLeft: '0.5rem', borderLeft: `2px solid ${C.brand200}` }}>{lbl && <strong style={{ color: C.n900 }}>{lbl}: </strong>}{body}</div>
+            })}
+          </div>
+        </div>
+      </RptSection>
+
+      {/* ── Section 2: SWOT Analysis ── */}
+      <RptSection title="SWOT Analysis">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.625rem' }}>
+          {swotFields.map(field => {
+            const cfg = swotCfg[field]
+            const pts = parsePoints(swot[field] ?? '')
+            return (
+              <div key={field} className="rpt-avoid-break" style={{ border: `1px solid ${C.n200}`, borderTop: `3px solid ${cfg.color}`, borderRadius: '0.5rem', padding: '0.625rem 0.75rem' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.4rem' }}>{cfg.label}</div>
+                {pts.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '0.4rem', alignItems: 'flex-start', marginBottom: '0.3rem' }}>
+                    <div style={{ flexShrink: 0, marginTop: '0.45rem', width: '4px', height: '4px', borderRadius: '50%', background: cfg.color }}/>
+                    <span style={{ fontSize: '0.8rem', color: C.n700, lineHeight: 1.55 }}>{p}</span>
+                  </div>
+                ))}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Key Risks */}
+        <div style={{ marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: riskColor(swot.overallRiskLevel), textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.4rem' }}>
+            Key Risks — Overall: {swot.overallRiskLevel}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            {riskCards.map((r, i) => (
+              <div key={i} className="rpt-avoid-break" style={{ border: `1px solid ${C.n200}`, borderLeft: `3px solid ${riskColor(swot.overallRiskLevel)}`, borderRadius: '0.375rem', padding: '0.625rem 0.75rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: C.n900, marginBottom: '0.25rem' }}>{r.title || `Risk ${i + 1}`}</div>
+                <div style={{ fontSize: '0.775rem', color: C.n600, lineHeight: 1.55, marginBottom: r.mitigation ? '0.35rem' : 0 }}>{r.description}</div>
+                {r.mitigation && <div style={{ fontSize: '0.775rem', color: C.brand700, lineHeight: 1.5, background: C.brand50, padding: '0.35rem 0.5rem', borderRadius: '0.25rem' }}>↗ {r.mitigation}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      </RptSection>
+
+      {/* ── Section 3: Market Analysis ── */}
+      <RptSection title="Market Analysis" pageBreak>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '0.625rem' }}>
+          {[
+            { label: 'Market Size',  value: market.marketSize || '—' },
+            { label: 'Saturation',   value: market.saturation || '—', color: (SAT_CFG[market.saturation] || {}).color },
+            { label: 'Market Trend', value: market.marketTrend || '—' },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '0.625rem 0.75rem' }}>
+              <RptLabel>{label}</RptLabel>
+              <RptValue color={color}>{value}</RptValue>
+            </div>
+          ))}
+        </div>
+        {market.marketTrendReason && (
+          <div style={{ fontSize: '0.8rem', color: C.n700, lineHeight: 1.6, padding: '0.5rem 0.75rem', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '0.5rem', marginBottom: '0.5rem' }}>
+            <strong style={{ color: C.n900 }}>Trend: </strong>{market.marketTrendReason}
+          </div>
+        )}
+        {competitors.length > 0 && (
+          <div className="rpt-avoid-break" style={{ marginBottom: '0.5rem' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: C.n500, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.35rem' }}>Competitors</div>
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: '0.5rem', overflow: 'hidden' }}>
+              {competitors.map((comp, i) => (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '0.5rem', padding: '0.5rem 0.75rem', borderTop: i > 0 ? '1px solid #f3f4f6' : 'none', fontSize: '0.8rem' }}>
+                  <div><strong style={{ color: C.n900 }}>{comp.name}</strong><div style={{ fontSize: '0.72rem', color: C.n500 }}>{comp.description}</div></div>
+                  <div style={{ color: (THREAT_CFG[comp.threat?.toUpperCase()] || {}).color || C.n500, fontWeight: 700, fontSize: '0.75rem' }}>{comp.threat}</div>
+                  <div style={{ color: C.n600 }}>{comp.priceRange}</div>
+                  <div style={{ color: C.n600 }}>{comp.targetSegment}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {market.differentiationAnalysis && (
+          <div style={{ padding: '0.625rem 0.75rem', background: C.brand50, border: `1px solid ${C.brand200}`, borderRadius: '0.5rem', fontSize: '0.8rem', color: C.brand800, lineHeight: 1.6, marginBottom: '0.5rem' }}>
+            <strong>Differentiation: </strong>{market.differentiationAnalysis}
+          </div>
+        )}
+        {market.fatalFlaws && (
+          <div style={{ padding: '0.625rem 0.75rem', background: '#fffbeb', border: '1px solid #fcd34d', borderLeft: '3px solid #f59e0b', borderRadius: '0.5rem', fontSize: '0.8rem', color: '#92400e', lineHeight: 1.6, marginBottom: '0.5rem' }}>
+            <strong>Watch Out: </strong>{market.fatalFlaws}
+            {market.likelyFailureMode && <div style={{ marginTop: '0.25rem', fontStyle: 'italic' }}>If this closes in 18 months: {market.likelyFailureMode}</div>}
+          </div>
+        )}
+        {opps.length > 0 && (
+          <div className="rpt-avoid-break">
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: C.n500, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.35rem' }}>Growth Opportunities</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+              {opps.map((opp, i) => (
+                <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '0.5rem 0.625rem' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: C.n900, marginBottom: '0.2rem' }}>{opp.title}</div>
+                  <div style={{ fontSize: '0.75rem', color: C.n600, lineHeight: 1.5 }}>{opp.description}</div>
+                  {opp.benefit && <div style={{ fontSize: '0.7rem', fontWeight: 600, color: C.brand600, marginTop: '0.25rem' }}>↑ {opp.benefit}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </RptSection>
+
+      {/* ── Section 4: Financial Projections ── */}
+      <RptSection title="Financial Projections — Year 1" pageBreak>
+        {/* KPIs */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '0.625rem' }}>
+          {[
+            { label: 'Year 1 Revenue',    value: `${fmtN(projections.year1Revenue)} JOD`,  color: C.brand500 },
+            { label: 'Net Profit',        value: `${fmtN(projections.year1Profit)} JOD`,   color: projections.year1Profit >= 0 ? C.brand500 : '#dc2626' },
+            { label: 'Break-Even Month',  value: projections.breakEvenMonth ? `Month ${projections.breakEvenMonth}` : 'After Year 1', color: projections.breakEvenMonth ? '#0ea5e9' : '#f59e0b' },
+            { label: 'ROI',               value: `${Math.round(projections.roi)}%`,          color: projections.roi >= 30 ? C.brand500 : '#f59e0b' },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '0.625rem 0.75rem' }}>
+              <RptLabel>{label}</RptLabel>
+              <RptValue color={color}>{value}</RptValue>
+            </div>
+          ))}
+        </div>
+        {/* Inputs used */}
+        <div className="rpt-avoid-break" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginBottom: '0.625rem' }}>
+          {[
+            { label: 'Initial Investment (CapEx)', value: `${fmtN(inputs.capex)} JOD` },
+            { label: 'Monthly OpEx',               value: `${fmtN(inputs.opex)} JOD` },
+            { label: 'Ticket Size',                value: `${fmtN(inputs.ticket)} JOD` },
+            { label: 'Customers / Month',          value: fmtN(inputs.customers) },
+            { label: 'Gross Margin',               value: `${inputs.margin}%` },
+            { label: 'Monthly Growth Rate',        value: `${inputs.growth}%` },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ border: '1px solid #e5e7eb', borderRadius: '0.375rem', padding: '0.4rem 0.625rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
+              <span style={{ color: C.n500 }}>{label}</span>
+              <span style={{ fontWeight: 700, color: C.n900 }}>{value}</span>
+            </div>
+          ))}
+        </div>
+        {/* Monthly table */}
+        <div className="rpt-avoid-break">
+          <div style={{ fontSize: '0.7rem', fontWeight: 700, color: C.n500, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.35rem' }}>Monthly Breakdown</div>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: '0.5rem', overflow: 'hidden', fontSize: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 2fr 2fr 2fr', background: '#f9fafb', padding: '0.375rem 0.625rem', fontWeight: 700, color: C.n500, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #e5e7eb', fontSize: '0.65rem' }}>
+              <span>Month</span><span>Revenue</span><span>COGS</span><span>Profit</span><span>Cum. Cash</span>
+            </div>
+            {projections.monthly.map((m, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 2fr 2fr 2fr 2fr', padding: '0.3rem 0.625rem', borderTop: i > 0 ? '1px solid #f3f4f6' : 'none', background: m === projections.breakEvenMonth ? '#f0fdf9' : 'transparent' }}>
+                <span style={{ fontWeight: 600, color: C.n700 }}>Month {m.month}</span>
+                <span style={{ color: C.n900 }}>{fmtN(m.revenue)}</span>
+                <span style={{ color: C.n500 }}>{fmtN(m.cogs)}</span>
+                <span style={{ color: m.profit >= 0 ? C.brand600 : '#dc2626', fontWeight: 600 }}>{fmtN(m.profit)}</span>
+                <span style={{ color: m.cumCash >= 0 ? C.brand600 : '#dc2626', fontWeight: 600 }}>{fmtN(m.cumCash)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* AI Insights */}
+        {insights?.length > 0 && (
+          <div style={{ marginTop: '0.625rem' }} className="rpt-avoid-break">
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: C.n500, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.35rem' }}>AI Insights</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+              {insights.map((ins, i) => {
+                const bg = ins.tone === 'positive' ? '#f0fdf9' : ins.tone === 'warn' ? '#fffbeb' : '#eff6ff'
+                const border = ins.tone === 'positive' ? C.brand200 : ins.tone === 'warn' ? '#fcd34d' : '#bfdbfe'
+                const tc = ins.tone === 'positive' ? C.brand700 : ins.tone === 'warn' ? '#92400e' : '#1e40af'
+                return (
+                  <div key={i} style={{ background: bg, border: `1px solid ${border}`, borderRadius: '0.5rem', padding: '0.5rem 0.625rem' }}>
+                    <div style={{ fontSize: '0.775rem', fontWeight: 700, color: tc, marginBottom: '0.2rem' }}>{ins.title}</div>
+                    <div style={{ fontSize: '0.75rem', color: tc, lineHeight: 1.5, opacity: 0.85 }}>{ins.body}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </RptSection>
+
+      {/* Footer */}
+      <div style={{ marginTop: '1.5rem', paddingTop: '0.75rem', borderTop: `1px solid ${C.n200}`, display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: C.n400 }}>
+        <span>Mashroo3i — AI Business Evaluation Platform · Jordan</span>
+        <span>Sources: DOS · JCC · Mashroo3i AI · WAMDA · Sector Benchmarks</span>
+      </div>
+    </div>
   )
 }
 
@@ -1035,10 +1366,16 @@ export default function EvaluationPage() {
   const [noCredits, setNoCredits] = useState(false)
   const [activeTab, setActiveTab] = useState('scoring')
 
+  const [financialReport, setFinancialReport] = useState(null)
+
   // Switch tab AND scroll to top so user always lands at page start
   const switchTab = useCallback((tab) => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setActiveTab(tab)
+  }, [])
+
+  const handleReportReady = useCallback((data) => {
+    setFinancialReport(data)
   }, [])
 
   const pollRef    = useRef(null)
@@ -1123,46 +1460,59 @@ export default function EvaluationPage() {
       `}</style>
 
       {/* Page Header */}
-      <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div className="eval-screen-only" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.625rem' }}>
-            <Link to="/dashboard"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem', fontWeight: 600, color: C.n500, textDecoration: 'none', transition: 'color 0.15s ease' }}
-              onMouseEnter={e => e.currentTarget.style.color = C.brand500}
-              onMouseLeave={e => e.currentTarget.style.color = C.n500}
-            >← Back to Dashboard</Link>
-            {phase === 'completed' && (
-              <Link to={`/financial-projections/${ideaId}`}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem', fontWeight: 700, color: C.brand600, textDecoration: 'none', padding: '0.3rem 0.75rem', background: C.brand50, border: `1px solid ${C.brand200}`, borderRadius: 99, transition: 'all 0.15s ease' }}
-                onMouseEnter={e => { e.currentTarget.style.background = C.brand100; e.currentTarget.style.borderColor = C.brand300 }}
-                onMouseLeave={e => { e.currentTarget.style.background = C.brand50;  e.currentTarget.style.borderColor = C.brand200 }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                Financial Projections
-              </Link>
-            )}
-          </div>
+          <Link to="/dashboard"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8125rem', fontWeight: 600, color: C.n500, textDecoration: 'none', marginBottom: '0.625rem', transition: 'color 0.15s ease' }}
+            onMouseEnter={e => e.currentTarget.style.color = C.brand500}
+            onMouseLeave={e => e.currentTarget.style.color = C.n500}
+          >← Back to Dashboard</Link>
           <h1 style={{ fontSize: 'clamp(1.375rem, 3vw, 1.75rem)', fontWeight: 800, color: C.n900, margin: '0 0 0.25rem', letterSpacing: '-0.02em' }}>Idea Evaluation</h1>
           <p style={{ fontSize: '0.875rem', color: C.n500, margin: 0 }}>AI-powered scoring, SWOT, and market analysis</p>
         </div>
-        {phase === 'analyzing' && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.875rem', borderRadius: '99px', background: C.brand500 + '12', border: `1px solid ${C.brand500}30`, fontSize: '0.8125rem', fontWeight: 600, color: C.brand500 }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: C.brand500, animation: 'spin 1s linear infinite', border: `2px solid ${C.brand500}50`, borderTopColor: C.brand500, boxSizing: 'border-box', flexShrink: 0 }}/>
-            Analyzing…
-          </span>
-        )}
-        {phase === 'completed' && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.35rem 0.875rem', borderRadius: '99px', background: '#dcfce7', border: '1px solid #86efac', fontSize: '0.8125rem', fontWeight: 600, color: '#15803d' }}>
-            <IconCheck/> Complete
-          </span>
-        )}
-        {phase === 'failed' && !noCredits && (
-          <span style={{ padding: '0.35rem 0.875rem', borderRadius: '99px', background: '#fee2e2', border: '1px solid #fca5a5', fontSize: '0.8125rem', fontWeight: 600, color: '#dc2626' }}>Failed</span>
-        )}
-        {phase === 'failed' && noCredits && (
-          <span style={{ padding: '0.35rem 0.875rem', borderRadius: '99px', background: C.brand50, border: `1px solid ${C.brand200}`, fontSize: '0.8125rem', fontWeight: 600, color: C.brand600 }}>No Credits</span>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {phase === 'completed' && scoring && swot && market && financialReport && (
+            <button
+              onClick={() => window.print()}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.5rem 1rem', borderRadius: '0.625rem', border: 'none',
+                background: `linear-gradient(180deg, ${C.brand500} 0%, ${C.brand600} 100%)`,
+                color: '#fff', fontWeight: 700, fontSize: '0.875rem',
+                fontFamily: 'inherit', cursor: 'pointer',
+                boxShadow: `0 4px 14px ${C.brand500}35`,
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Export Full Report
+            </button>
+          )}
+          {phase === 'analyzing' && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.875rem', borderRadius: '99px', background: C.brand500 + '12', border: `1px solid ${C.brand500}30`, fontSize: '0.8125rem', fontWeight: 600, color: C.brand500 }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: C.brand500, animation: 'spin 1s linear infinite', border: `2px solid ${C.brand500}50`, borderTopColor: C.brand500, boxSizing: 'border-box', flexShrink: 0 }}/>
+              Analyzing…
+            </span>
+          )}
+          {phase === 'completed' && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.35rem 0.875rem', borderRadius: '99px', background: '#dcfce7', border: '1px solid #86efac', fontSize: '0.8125rem', fontWeight: 600, color: '#15803d' }}>
+              <IconCheck/> Complete
+            </span>
+          )}
+          {phase === 'failed' && !noCredits && (
+            <span style={{ padding: '0.35rem 0.875rem', borderRadius: '99px', background: '#fee2e2', border: '1px solid #fca5a5', fontSize: '0.8125rem', fontWeight: 600, color: '#dc2626' }}>Failed</span>
+          )}
+          {phase === 'failed' && noCredits && (
+            <span style={{ padding: '0.35rem 0.875rem', borderRadius: '99px', background: C.brand50, border: `1px solid ${C.brand200}`, fontSize: '0.8125rem', fontWeight: 600, color: C.brand600 }}>No Credits</span>
+          )}
+        </div>
       </div>
+
+      {/* ── Hidden print-only full report ─────────────────────────────── */}
+      {phase === 'completed' && scoring && swot && market && financialReport && (
+        <FullReportPrint scoring={scoring} swot={swot} market={market} financialReport={financialReport} />
+      )}
 
       {/* Loading skeleton */}
       {phase === 'loading' && (
@@ -1217,7 +1567,7 @@ export default function EvaluationPage() {
 
       {/* Completed */}
       {phase === 'completed' && scoring && (
-        <div style={{ animation: 'fadeUp 0.4s ease both' }}>
+        <div className="eval-screen-only" style={{ animation: 'fadeUp 0.4s ease both' }}>
           <TabBar
             active={activeTab}
             onChange={switchTab}
@@ -1227,7 +1577,8 @@ export default function EvaluationPage() {
           />
           {activeTab === 'scoring' && <ScoringTab scoring={scoring} swotReady={!!swot} onViewSwot={() => switchTab('swot')}/>}
           {activeTab === 'swot'    && swot   && <SwotTab   swot={swot} marketReady={!!market} onViewMarket={() => switchTab('market')}/>}
-          {activeTab === 'market'  && market && <MarketTab market={market}/>}
+          {activeTab === 'market'  && market && <MarketTab market={market} onViewFinancial={() => switchTab('financial')}/>}
+          {activeTab === 'financial' && <FinancialProjectionsWizard ideaId={ideaId} onReportReady={handleReportReady} />}
         </div>
       )}
     </AppLayout>

@@ -19,3 +19,24 @@ export async function saveFinancialPlan(ideaId, inputs) {
     },
   })
 }
+
+export async function fetchAIInsights(ideaId, { inputs, projections, sectorLabel }) {
+  return api.post(`${BASE}/${ideaId}/insights`, {
+    auth: true,
+    body: {
+      sectorLabel,
+      capEx:         inputs.capex,
+      opEx:          inputs.opex,
+      ticket:        inputs.ticket,
+      customers:     inputs.customers,
+      margin:        inputs.margin,
+      growth:        inputs.growth,
+      year1Revenue:  Math.round(projections.year1Revenue),
+      year1Profit:   Math.round(projections.year1Profit),
+      year1Cogs:     Math.round(projections.year1Cogs),
+      year1Opex:     Math.round(projections.year1Opex),
+      roi:           Math.round(projections.roi),
+      breakEvenMonth: projections.breakEvenMonth ?? null,
+    },
+  })
+}

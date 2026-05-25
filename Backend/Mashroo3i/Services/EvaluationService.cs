@@ -14,8 +14,6 @@ namespace Mashroo3i.Services
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<EvaluationService> _logger;
 
-        // Keys that are documentation for humans, not data for the AI.
-        // Stripping them cuts token usage ~30% on the JSON files.
         private static readonly HashSet<string> _noiseKeys = new(StringComparer.OrdinalIgnoreCase)
         {
             "_meta", "label", "labelAr", "description", "subSectors", "examplesAmman",
@@ -49,8 +47,6 @@ namespace Mashroo3i.Services
             idea.Status = BusinessIdea.StatusAnalyzing;
             await _db.SaveChangesAsync(ct);
 
-            // ── Load & compress data files ONCE ──────────────────────────────
-            // Strip documentation keys so the AI gets numbers, not prose.
             var economy = CompressJson(LoadJson("shared", "jordan_economy_snapshot.json"));
             var redFlags = CompressJson(LoadJson("shared", "red_flag_rules.json"));
             var channels = CompressJson(LoadJson("shared", "acquisition_channels.json"));
@@ -58,17 +54,33 @@ namespace Mashroo3i.Services
             var sectorFile = ResolveSectorFile(idea.Sector);
             var sector = sectorFile != null ? CompressJson(LoadJson("sectors", sectorFile)) : null;
 
-            // ── Shared context block (economy + sector) — injected into all 3 prompts ──
             var sharedCtx = BuildSharedContext(idea, economy, sector);
 
             try
             {
-                // ── 1. Scoring ───────────────────────────────────────────────
-                _logger.LogInformation("Scoring idea {IdeaId} | sector: {Sector}", ideaId, idea.Sector);
+                _logger.LogInformation("Starting parallel AI evaluation for idea {IdeaId} | sector: {Sector}", ideaId, idea.Sector);
 
-                var scoreResult = await _ai.GenerateJsonAsync<ScoreAiResponse>(
+                // ── Run all 3 AI calls in parallel — they are fully independent ──────
+                var scoringTask = _ai.GenerateJsonAsync<ScoreAiResponse>(
                     BuildScoringPrompt(sharedCtx, redFlags, channels), ct);
 
+                var swotTask = _ai.GenerateJsonAsync<SwotAiResponse>(
+                    BuildSwotPrompt(sharedCtx), ct);
+
+                var marketTask = _ai.GenerateJsonAsync<MarketAiResponse>(
+                    BuildMarketPrompt(sharedCtx), ct);
+
+                await Task.WhenAll(scoringTask, swotTask, marketTask);
+
+                var scoreResult = await scoringTask;
+                var swotResult = await swotTask;
+                var marketResult = await marketTask;
+
+                _logger.LogInformation("All 3 AI calls completed in parallel for idea {IdeaId}", ideaId);
+
+                // ── Persist results sequentially (DbContext is not thread-safe) ──────
+
+                // 1. Scores
                 var scores = new EvaluationScores
                 {
                     IdeaId = ideaId,
@@ -90,15 +102,10 @@ namespace Mashroo3i.Services
                     _db.EvaluationScores.Add(scores);
 
                 await _db.SaveChangesAsync(ct);
-                _logger.LogInformation("Scoring done. Score={Score} Verdict={Verdict}",
+                _logger.LogInformation("Scoring saved. Score={Score} Verdict={Verdict}",
                     scores.OverallScore, scores.Verdict);
 
-                // ── 2. SWOT + Risk ───────────────────────────────────────────
-                _logger.LogInformation("SWOT for idea {IdeaId}", ideaId);
-
-                var swotResult = await _ai.GenerateJsonAsync<SwotAiResponse>(
-                    BuildSwotPrompt(sharedCtx), ct);
-
+                // 2. SWOT
                 var risksJson = JsonSerializer.Serialize(
                     swotResult.Risks ?? new List<RiskItem>(),
                     new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
@@ -120,14 +127,9 @@ namespace Mashroo3i.Services
                     _db.SwotAnalyses.Add(swot);
 
                 await _db.SaveChangesAsync(ct);
-                _logger.LogInformation("SWOT done. Risk={Level}", swot.OverallRiskLevel);
+                _logger.LogInformation("SWOT saved. Risk={Level}", swot.OverallRiskLevel);
 
-                // ── 3. Market & Competitor Analysis ──────────────────────────
-                _logger.LogInformation("Market analysis for idea {IdeaId}", ideaId);
-
-                var marketResult = await _ai.GenerateJsonAsync<MarketAiResponse>(
-                    BuildMarketPrompt(sharedCtx), ct);
-
+                // 3. Market
                 var rawTrend = (marketResult.MarketTrend ?? "STABLE").ToUpperInvariant();
                 var trend = rawTrend is "GROWING" or "DECLINING" ? rawTrend : "STABLE";
 
@@ -163,7 +165,7 @@ namespace Mashroo3i.Services
                     _db.MarketAnalyses.Add(market);
 
                 await _db.SaveChangesAsync(ct);
-                _logger.LogInformation("Market done. Trend={Trend} Saturation={Sat}", trend, sat);
+                _logger.LogInformation("Market saved. Trend={Trend} Saturation={Sat}", trend, sat);
 
                 idea.Status = BusinessIdea.StatusCompleted;
                 await _db.SaveChangesAsync(ct);
@@ -176,8 +178,6 @@ namespace Mashroo3i.Services
                 throw;
             }
         }
-
-        // ── Shared context (built ONCE, reused in all 3 prompts) ─────────────
 
         private static string BuildSharedContext(BusinessIdea idea, string economy, string? sector)
         {
@@ -204,92 +204,166 @@ namespace Mashroo3i.Services
                 """;
         }
 
-        // ── Prompt Builders ───────────────────────────────────────────────────
-
+        // ── CHANGED: concerns 4→3, recommendations 4→3, added split-item prevention examples ──
         private static string BuildScoringPrompt(string sharedCtx, string redFlags, string channels)
         {
             return $$"""
-                You are a senior analyst scoring a startup idea for the Jordanian market.
-                Score honestly — do not be optimistic.
+        You are a senior analyst scoring a startup idea for the Jordanian market.
+        Score honestly — do not be optimistic. Use ONLY plain text, no markdown, no asterisks.
+        Write for a first-time entrepreneur with no finance background.
+        When using a financial term, explain it simply in the same sentence.
+        Example: "gross margin (the percentage you keep after product costs) is 35%, below the healthy 40% benchmark."
+        Keep explanations natural — not in brackets, just as part of the sentence.
 
-                {{sharedCtx}}
+        {{sharedCtx}}
 
-                === FINANCIAL RED FLAGS ===
-                {{redFlags}}
+        === FINANCIAL RED FLAGS ===
+        {{redFlags}}
 
-                === ACQUISITION CHANNELS & CAC ===
-                {{channels}}
+        === ACQUISITION CHANNELS & CAC ===
+        {{channels}}
 
-                === SCORING (0–100 each) ===
-                marketScore:     demand + purchasing power in Jordan for this idea
-                financialScore:  budget vs. startup costs; margins vs. red flag thresholds
-                executionScore:  can a small team realistically launch in Jordan today?
-                innovationScore: is the USP genuinely different from what exists in Jordan?
-                overallScore:    weighted average (25% each)
+        === SCORING (0-100 each) ===
+        marketScore:     demand + purchasing power in Jordan for this idea
+        financialScore:  budget vs startup costs; use the EXACT gross margin % from sector data above
+        executionScore:  can a small team realistically launch in Jordan today?
+        innovationScore: is the USP genuinely different from what exists in Jordan?
+        overallScore:    weighted average (25% each)
 
-                verdict: ≥75→"Highly Promising" | 60-74→"Promising" | 45-59→"Needs Refinement" | 30-44→"High Risk" | <30→"Not Viable"
+        verdict: >=75 Highly Promising | 60-74 Promising | 45-59 Needs Refinement | 30-44 High Risk | <30 Not Viable
 
-                strengths (2-3):       specific, cite a real number or fact where possible
-                concerns:              Return exactly 4 items. Each concern must have a SHORT BOLD LABEL (3-5 words) followed by ": " then 2-3 sentences of explanation — why it matters specifically in Jordan, with a real number or fact where possible. Format: "Label: Explanation sentences." Max 55 words per item.
-                recommendations:       Return exactly 4 items. Each must have a SHORT BOLD LABEL (3-6 words) followed by ": " then 2-3 concrete sentences — what to do, how, and why it will help this specific idea in Jordan. Start with an action verb after the label. Max 60 words per item.
+        summary: 3-4 sentences, 60-80 words. Cover the core opportunity, the main risk, and one key number. Simple language.
 
-                Return ONLY valid JSON:
-                {"overallScore":0,"marketScore":0,"financialScore":0,"executionScore":0,"innovationScore":0,"verdict":"","summary":"","strengths":[],"concerns":[],"recommendations":[]}
-                """;
+        strengths: Exactly 3 items.
+                   Each item is ONE complete thought — never split a single strength across two items.
+                   Each item: 2 sentences. First states the strength with a real number or Jordan-specific fact.
+                   Second explains why it matters for this business.
+                   Total per item: under 50 words.
+
+        concerns: Exactly 3 items — no more, no less.
+                  Each item is SELF-CONTAINED. A single concern must never be split across two list entries.
+                  Format REQUIRED for every item: "Label: explanation"
+                  Label = 3-5 plain words. No asterisks, no bold, no symbols, no colon inside the label itself.
+                  Explanation = 2 sentences written as one continuous thought: first names the problem with a
+                  Jordan-specific number or example, second explains the real-world consequence for this business.
+                  Explain any financial term used simply in the same sentence.
+                  Total per item: 50-65 words.
+
+                  CORRECT example:
+                  "Cash Flow Gap: B2B clients in Jordan typically pay 30-60 days after invoicing, meaning money earned is not cash in hand. With 1,200 JOD in monthly fixed costs you need at least 2 months of reserves before income stabilises."
+
+                  WRONG — never do this (one concern split into two items):
+                  Item 1: "Subscription Revenue Risk: Relying on subscriptions is risky if retention is low."
+                  Item 2: "the typical retention rate for services is 80%, but one-off projects see lower retention."
+                  The above is forbidden. Merge related thoughts into one self-contained item.
+
+        recommendations: Exactly 3 items — no more, no less.
+                         Each item is SELF-CONTAINED. A single recommendation must never be split across two list entries.
+                         Format REQUIRED for every item: "Label: action"
+                         Label = 3-5 plain words. No asterisks, no bold, no symbols.
+                         Action = 2 sentences written as one continuous thought: first gives a specific actionable
+                         step with a concrete detail (number, name, channel), second explains the expected outcome
+                         and approximate timeline.
+                         Use simple everyday language — no jargon.
+                         Total per item: 50-65 words.
+
+                         CORRECT example:
+                         "Secure Anchor Clients First: Approach 3-5 Amman-based SMEs directly before launch and offer a 2-month pilot at a discounted rate. Locking in monthly retainers before going public gives you predictable cash flow from day one and reduces the risk of running out of money in month 3."
+
+                         WRONG — never do this (one recommendation split into two items):
+                         Item 1: "Build a Referral Program: Create a referral scheme to reduce acquisition cost."
+                         Item 2: "offer a one-month free credit for every paying customer who refers a friend."
+                         The above is forbidden. Merge into one self-contained item.
+
+        Return ONLY valid JSON — no extra text, no markdown:
+        {"overallScore":0,"marketScore":0,"financialScore":0,"executionScore":0,"innovationScore":0,"verdict":"","summary":"","strengths":[],"concerns":[],"recommendations":[]}
+        """;
         }
 
+        // ── SWOT prompt unchanged ──────────────────────────────────────────────────
         private static string BuildSwotPrompt(string sharedCtx)
         {
             return $$"""
-                You are a strategic advisor for the Jordanian startup ecosystem.
-                Conduct a SWOT analysis. Be specific — name real competitors and cite actual figures.
+        You are a strategic advisor for the Jordanian startup ecosystem.
+        Use ONLY plain text — no markdown, no asterisks, no bold symbols.
+        Write for a first-time entrepreneur with no finance background.
+        When using a financial term, explain it simply in the same sentence.
+        Example: "delivery commissions (the fees Talabat takes per order) reach 30%, squeezing profit."
+        Keep explanations natural — not in brackets, just as part of the sentence.
+        Be specific — name real Jordan competitors and cite real figures.
+        CRITICAL: The idea budget is clearly stated in the IDEA section above. Never invent, assume, or change this number. Always use the exact budget from the IDEA section when mentioning costs or budget.
 
-                {{sharedCtx}}
+        {{sharedCtx}}
 
-                === SWOT RULES ===
-                Each field: 2-3 points separated by \n. No bullets, no numbering.
-                Each point: 1-2 sentences (25-40 words). Name real competitors and real cost figures.
+        === SWOT RULES ===
+        Each SWOT field: 3 points separated by \n.
+        Each point: 2 sentences. First sentence states the fact with a specific number or Jordan-specific detail. Second sentence explains the business implication.
+        Total per point: 35-50 words.
+        Use the EXACT gross margin % from sector data. Be consistent with financialScore.
+        Use simple language — explain any term you use.
 
-                === RISK RULES ===
-                2-3 internal execution risks (cash flow, staffing, ops — distinct from SWOT threats).
-                Each: "title" (4-6 words), "description" (1-2 sentences, Jordan-specific), "mitigation" (1-2 sentences, concrete action).
-                overallRiskLevel: "Low"|"Medium"|"High"|"Critical"
+        === RISK RULES ===
+        Exactly 2 risks (cash flow + one other operational risk).
+        title: 4-6 words, plain language.
+        description: 2 sentences, Jordan-specific, under 50 words. First sentence explains the risk clearly with a real example or number. Second sentence describes the likely consequence for this specific business.
+        mitigation: 2 sentences, concrete action, under 50 words. First sentence states what to do specifically. Second sentence explains how this reduces the risk.
+        overallRiskLevel: "Low" or "Medium" or "High" or "Critical"
 
-                Return ONLY valid JSON:
-                {"strengths":"","weaknesses":"","opportunities":"","threats":"","risks":[{"title":"","description":"","mitigation":""}],"overallRiskLevel":""}
-                """;
+        Return ONLY valid JSON:
+        {"strengths":"","weaknesses":"","opportunities":"","threats":"","risks":[{"title":"","description":"","mitigation":""}],"overallRiskLevel":""}
+        """;
         }
 
+        // ── CHANGED: opportunities — added title enforcement rules and BAD/GOOD examples ──
         private static string BuildMarketPrompt(string sharedCtx)
         {
             return $$"""
-                You are a Jordanian seed investor conducting market and competitor analysis.
-                Name actual businesses operating in Jordan. Most markets are MEDIUM saturation.
+        You are a Jordanian seed investor doing market and competitor research.
+        Name actual businesses operating in Jordan. Use ONLY plain text — no markdown, no asterisks.
+        Write for a first-time entrepreneur with no finance background.
+        When using a financial term, explain it simply in the same sentence.
+        Example: "market saturation (how crowded the market is) is HIGH, meaning many competitors already exist."
+        Keep explanations natural — not in brackets, just as part of the sentence.
 
-                {{sharedCtx}}
+        {{sharedCtx}}
 
-                === OUTPUT RULES ===
-                fatalFlaw:             The single most serious blocker for this idea in Jordan (1-2 sentences, be direct).
-                competitorAnalysis:    Name real Jordan businesses doing something similar (1-2 sentences).
-                likelyFailureMode:     If this closes in 18 months — exactly what happened? (1 sentence, present tense)
-                marketSize:            Total addressable market in Jordan. Format: "~45M JOD"
-                saturation:            "HIGH"|"MEDIUM"|"LOW"
-                competitors:           2-3 real Jordan competitors. Fields: name, description (one phrase), threat (HIGH/MEDIUM/LOW), priceRange, targetSegment, mainStrength.
-                marketOpportunities:   3 specific, actionable opportunities for this business in Jordan right now.
-                                       Each opportunity MUST be a JSON object with these exact fields:
-                                       "title"       — a complete, self-explanatory title (5-9 words, no trailing dots or ellipsis)
-                                       "description" — 1-2 sentences that ADD detail not already in the title (different wording, more context)
-                                       "benefit"     — expected business benefit in one short phrase (e.g. "15-20% revenue uplift")
-                marketTrend:           "GROWING"|"STABLE"|"DECLINING"
-                marketTrendReason:     One sentence explaining the trend with Jordan-specific data.
-                differentiationAnalysis: 2 sentences on what makes this different and whether that difference is strong or weak.
+        === OUTPUT RULES — substantive but focused ===
+        fatalFlaw:               2 sentences, under 50 words. First sentence names the specific blocker in Jordan. Second explains why it matters for this business.
+        competitorAnalysis:      2 sentences, under 50 words. Name 2 real Jordan businesses with specific details (price range or market share). Second sentence explains what makes them a real threat.
+        likelyFailureMode:       2 sentences, under 45 words. First sentence describes the failure scenario specifically. Second explains the warning signs to watch for.
+        marketSize:              Format: "~45M JOD" — number only.
+        saturation:              "HIGH" or "MEDIUM" or "LOW" — one word only.
+        marketTrend:             "GROWING" or "STABLE" or "DECLINING" — one word only.
+        marketTrendReason:       2 sentences, under 45 words. First sentence gives one Jordan-specific stat or trend. Second sentence explains what this means for the business.
+        differentiationAnalysis: 3 sentences, under 60 words total. First explains the current gap in the market. Second describes how this idea fills it. Third states the realistic competitive advantage.
+        competitors:             Exactly 2 real Jordan competitors.
+                                 Each: name, description (phrase under 10 words),
+                                 threat (HIGH or MEDIUM or LOW),
+                                 priceRange, targetSegment, mainStrength.
 
-                Return ONLY valid JSON:
-                {"fatalFlaw":"","competitorAnalysis":"","likelyFailureMode":"","marketSize":"","saturation":"","competitors":[],"marketOpportunities":[{"title":"","description":"","benefit":""}],"marketTrend":"","marketTrendReason":"","differentiationAnalysis":""}
-                """;
+        marketOpportunities:     Exactly 3 opportunities — no more, no less.
+                                 Every opportunity MUST have all 3 fields populated. Never leave title empty or generic.
+
+                                 title: 5-8 words describing the specific actionable opportunity.
+                                        The title must describe WHAT to do or WHAT the opportunity is — not just name a concept.
+                                        BAD title (too vague, just a concept): "Shared office for freelancers"
+                                        BAD title (empty or generic): "Growth opportunity" / "Market expansion"
+                                        GOOD title: "Target Freelancers Through Coworking Space Partnerships"
+                                        GOOD title: "Offer Corporate Wellness Packages to Amman SMEs"
+
+                                 description: 2 sentences, under 45 words.
+                                              First sentence describes the opportunity with a Jordan-specific stat or context.
+                                              Second sentence explains exactly how to capture it with a concrete action.
+
+                                 benefit: phrase under 10 words, specific and measurable — not vague.
+                                          BAD benefit: "Good opportunity" / "Increases revenue"
+                                          GOOD benefit: "Cuts customer acquisition cost by up to 40%"
+                                          GOOD benefit: "Adds a stable recurring revenue stream"
+
+        Return ONLY valid JSON:
+        {"fatalFlaw":"","competitorAnalysis":"","likelyFailureMode":"","marketSize":"","saturation":"","competitors":[{"name":"","description":"","threat":"","priceRange":"","targetSegment":"","mainStrength":""}],"marketOpportunities":[{"title":"","description":"","benefit":""}],"marketTrend":"","marketTrendReason":"","differentiationAnalysis":""}
+        """;
         }
-
-        // ── Helpers ───────────────────────────────────────────────────────────
 
         private static string? ResolveSectorFile(string sector) => sector.ToLower() switch
         {
@@ -313,10 +387,6 @@ namespace Mashroo3i.Services
             return File.ReadAllText(path);
         }
 
-        /// <summary>
-        /// Strips documentation-only keys from a JSON string so the AI only sees numbers and data.
-        /// Reduces token count by ~30% on the data files without losing analytical value.
-        /// </summary>
         private static string CompressJson(string json)
         {
             try
@@ -326,26 +396,17 @@ namespace Mashroo3i.Services
                 StripNoise(node);
                 return node.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
             }
-            catch
-            {
-                return json; // if parse fails, return as-is
-            }
+            catch { return json; }
         }
 
         private static void StripNoise(JsonNode node)
         {
             if (node is JsonObject obj)
             {
-                var toRemove = obj
-                    .Select(kvp => kvp.Key)
-                    .Where(k => _noiseKeys.Contains(k))
-                    .ToList();
-
-                foreach (var key in toRemove)
-                    obj.Remove(key);
-
-                foreach (var child in obj)
-                    StripNoise(child.Value!);
+                var toRemove = obj.Select(kvp => kvp.Key)
+                    .Where(k => _noiseKeys.Contains(k)).ToList();
+                foreach (var key in toRemove) obj.Remove(key);
+                foreach (var child in obj) StripNoise(child.Value!);
             }
             else if (node is JsonArray arr)
             {
@@ -355,8 +416,6 @@ namespace Mashroo3i.Services
         }
 
         private static int Clamp(int v) => Math.Clamp(v, 0, 100);
-
-        // ── AI response models ────────────────────────────────────────────────
 
         private class ScoreAiResponse
         {

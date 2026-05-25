@@ -17,7 +17,7 @@ import ProfilePage    from './pages/Profilepage'
 import EvaluationPage from './pages/EvaluationPage'
 import PricingPage    from './pages/Pricingpage'
 import CheckoutPage     from './pages/Checkoutpage'
-import BuyCreditsPage   from './pages/BuyCreditsPage'
+import BuyCreditsPage   from './pages/Buycreditspage'
 import FinancialProjectionsPage   from './pages/FinancialProjectionsPage'
 
 function ProtectedRoute({ children }) {
