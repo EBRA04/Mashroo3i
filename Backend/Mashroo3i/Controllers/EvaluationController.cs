@@ -37,44 +37,78 @@ namespace Mashroo3i.Controllers
             var userId = GetUserId();
             if (userId == null) return Unauthorized();
 
-            var idea = await _db.BusinessIdeas
-                .FirstOrDefaultAsync(i => i.IdeaId == ideaId && i.UserId == userId.Value);
+            // ── Step 1: Atomic credit deduction ──────────────────────────────
+            // Single UPDATE WHERE Credits > 0 — eliminates the TOCTOU window
+            // between reading credits and deducting them.
+            var creditRows = await _db.Users
+                .Where(u => u.Id == userId.Value && u.EvaluationCredits > 0)
+                .ExecuteUpdateAsync(s =>
+                    s.SetProperty(u => u.EvaluationCredits, u => u.EvaluationCredits - 1));
 
-            if (idea == null) return NotFound(new { message = "Idea not found." });
+            if (creditRows == 0)
+            {
+                // Either user doesn't exist or has no credits.
+                var userExists = await _db.Users.AnyAsync(u => u.Id == userId.Value);
+                if (!userExists) return Unauthorized();
 
-            if (idea.Status == BusinessIdea.StatusCompleted)
-                return Ok(new { message = "Already evaluated.", idea.Status });
-
-            if (idea.Status == BusinessIdea.StatusAnalyzing)
-                return Accepted(new { message = "Evaluation already in progress.", idea.Status });
-
-            // ── Credits check ─────────────────────────────────────────────
-            var user = await _db.Users.FindAsync(userId.Value);
-            if (user == null) return Unauthorized();
-
-            if (user.EvaluationCredits <= 0)
                 return BadRequest(new
                 {
                     message = "You have no evaluation credits. Please purchase credits to continue.",
                     code = "NO_CREDITS"
                 });
+            }
 
-            // Deduct one credit before starting the background job
-            user.EvaluationCredits -= 1;
-            await _db.SaveChangesAsync();
+            // ── Step 2: Atomic status transition: pending → analyzing ─────────
+            // ExecuteUpdateAsync generates a single UPDATE … WHERE IdeaId = x AND Status = 'pending'.
+            // If 0 rows are affected, another request already owns this evaluation slot.
+            // In that case we refund the credit we just deducted.
+            var rowsUpdated = await _db.BusinessIdeas
+                .Where(i => i.IdeaId == ideaId
+                         && i.UserId == userId.Value
+                         && i.Status == BusinessIdea.StatusSubmitted)
+                .ExecuteUpdateAsync(s =>
+                    s.SetProperty(i => i.Status, BusinessIdea.StatusAnalyzing));
 
-            // Fire-and-forget with a fresh DI scope.
+            if (rowsUpdated == 0)
+            {
+                // Refund — we own the credit deduction but not the evaluation slot.
+                await _db.Users
+                    .Where(u => u.Id == userId.Value)
+                    .ExecuteUpdateAsync(s =>
+                        s.SetProperty(u => u.EvaluationCredits, u => u.EvaluationCredits + 1));
+
+                var existing = await _db.BusinessIdeas
+                    .FirstOrDefaultAsync(i => i.IdeaId == ideaId && i.UserId == userId.Value);
+
+                if (existing == null)
+                    return NotFound(new { message = "Idea not found." });
+
+                if (existing.Status == BusinessIdea.StatusCompleted)
+                    return Ok(new { message = "Already evaluated.", existing.Status });
+
+                return Accepted(new { message = "Evaluation already in progress.", existing.Status });
+            }
+
+            // ── Step 3: Fire-and-forget with a fresh DI scope ─────────────────
+            // On failure, EvaluateAsync marks status = "failed" and we refund the credit.
             _ = Task.Run(async () =>
             {
                 await using var scope = _scopeFactory.CreateAsyncScope();
                 var evalService = scope.ServiceProvider.GetRequiredService<EvaluationService>();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 try
                 {
                     await evalService.EvaluateAsync(ideaId);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Background evaluation failed for idea {IdeaId}", ideaId);
+                    _logger.LogError(ex, "Background evaluation failed for idea {IdeaId} — refunding credit", ideaId);
+
+                    // Refund the credit since evaluation didn't complete.
+                    await db.Users
+                        .Where(u => u.Id == userId.Value)
+                        .ExecuteUpdateAsync(s =>
+                            s.SetProperty(u => u.EvaluationCredits, u => u.EvaluationCredits + 1));
                 }
             });
 
@@ -97,7 +131,7 @@ namespace Mashroo3i.Controllers
             var idea = await _db.BusinessIdeas
                 .Include(i => i.EvaluationScores)
                 .Include(i => i.SwotAnalysis)
-                .Include(i => i.MarketAnalysis)          // ← added
+                .Include(i => i.MarketAnalysis)
                 .FirstOrDefaultAsync(i => i.IdeaId == ideaId && i.UserId == userId.Value);
 
             if (idea == null) return NotFound(new { message = "Idea not found." });
@@ -141,7 +175,6 @@ namespace Mashroo3i.Controllers
                     idea.MarketAnalysis.LikelyFailureMode,
                     idea.MarketAnalysis.CompetitorAnalysis,
                     idea.MarketAnalysis.DifferentiationAnalysis,
-                    // Deserialize JSON columns back to arrays for the frontend
                     competitors = ParseJson(idea.MarketAnalysis.CompetitorsJson),
                     marketOpportunities = ParseJson(idea.MarketAnalysis.MarketOpportunitiesJson),
                     analyzedAt = idea.MarketAnalysis.CreatedAt,
@@ -157,10 +190,6 @@ namespace Mashroo3i.Controllers
             return Guid.TryParse(claim, out var id) ? id : null;
         }
 
-        /// <summary>
-        /// Safely deserializes a JSON array string back to a list of objects.
-        /// Returns an empty list instead of throwing if the value is null or malformed.
-        /// </summary>
         private static List<object> ParseJson(string? json)
         {
             if (string.IsNullOrWhiteSpace(json)) return new();

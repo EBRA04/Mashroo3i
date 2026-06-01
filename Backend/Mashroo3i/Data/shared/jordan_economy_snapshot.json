@@ -1,27 +1,11 @@
 {
-  "_meta": {
-    "file": "jordan_economy_snapshot.json",
-    "purpose": "Shared macroeconomic context injected into ALL sector prompts",
-    "version": "1.0.0",
-    "lastUpdated": "2026-04-07",
-    "sources": [
-      "Jordan Department of Statistics (DoS) 2024",
-      "Social Security Corporation (SSC) Jordan 2025",
-      "World Bank Jordan Economic Monitor 2024",
-      "DataReportal Digital 2024: Jordan",
-      "Statista eCommerce Jordan 2025",
-      "GEM Jordan National Report 2024/2025"
-    ]
-  },
-  "currency": "JOD",
-  "geography": "Greater Amman Metropolitan Area",
   "macroeconomics": {
-    "gdpGrowth": 2.7,
-    "gdpGrowthUnit": "% (2023 actual, World Bank)",
-    "gdpGrowthProjected2024": 2.4,
-    "inflation": 2.1,
-    "inflationUnit": "% (2023 actual)",
-    "inflationRange2024_2025": "1.5-2.2%"
+    "gdpGrowth": 2.6,
+    "gdpGrowthUnit": "% (2024 actual, World Bank)",
+    "gdpGrowthProjected2025": 2.5,
+    "inflation": 1.9,
+    "inflationUnit": "% (2024 actual)",
+    "inflationRange2025": "1.8-2.2%"
   },
   "laborMarket": {
     "minimumWage": 290,
@@ -35,8 +19,7 @@
       "private_sector_estimate": 510,
       "public_sector_estimate": 646,
       "professionals": 700,
-      "skilled_worker_amman_range": "450-850 JOD",
-      "unit": "JOD/month"
+      "skilled_worker_amman_range": "450-850 JOD"
     },
     "employerSocialSecurityRate": 14.25,
     "employeeSocialSecurityRate": 7.5,
@@ -45,17 +28,6 @@
     "youthUnemployment": "40%+",
     "laborForceParticipation": 34.1
   },
-  "companyRegistration": {
-    "registrationFee": "250 JOD or 0.002 of capital (whichever is greater)",
-    "chamberOfCommerceFee": "50-1500 JOD",
-    "requiredDocuments": [
-      "Completed application form",
-      "Memorandum and articles of association",
-      "Proof of 50% capital deposit",
-      "Copy of national ID"
-    ],
-    "startupActBenefit": "0% corporate income tax for first 3 years (check eligibility)"
-  },
   "digitalLandscape": {
     "internetPenetration": 91.0,
     "socialMediaPenetration": 56.2,
@@ -63,7 +35,7 @@
     "urbanPopulationShare": 92.1,
     "medianAge": 24.2,
     "youthUnder30": "70% of population",
-    "primaryChannels": ["Instagram", "TikTok", "Facebook", "WhatsApp"],
+    "primaryChannels": [ "Instagram", "TikTok", "Facebook", "WhatsApp" ],
     "marketingImplication": "Mobile-first, urban, young market. Instagram/TikTok are primary B2C acquisition channels."
   },
   "ecommerceMarket": {
@@ -88,16 +60,10 @@
     "SMEShareOfRegisteredCompanies": "98%"
   },
   "consumerBehavior": {
-    "dominantShoppingChannels": ["Instagram", "Talabat/Careem", "OpenSooq", "Facebook Marketplace", "Noon.com"],
+    "dominantShoppingChannels": [ "Instagram", "Talabat/Careem", "OpenSooq", "Facebook Marketplace", "Noon.com" ],
     "paymentPreference": "COD dominant, growing card adoption",
     "onlineShoppers": "36% of internet users have purchased online",
     "trustDrivers": "Vendor trust and perceived usefulness are key"
-  },
-  "officeRentBenchmarks": {
-    "smallCommercial_55sqm": "3600 JOD/year (Khalda area)",
-    "office_115sqm_furnished": "24000 JOD/year",
-    "office_141sqm_Abdali": "35000 JOD/year",
-    "office_240sqm_3rdCircle": "25000 JOD/year"
   },
   "cashFlowWarning": "Standard B2B payment terms: 30-60 days. Plan 2-3 months runway before first cash inflow.",
   "commonRisksAllSectors": [

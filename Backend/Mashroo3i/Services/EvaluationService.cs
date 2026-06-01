@@ -30,22 +30,30 @@ namespace Mashroo3i.Services
 
         public async Task EvaluateAsync(Guid ideaId, CancellationToken ct = default)
         {
+            // ── Guard: only proceed if status is "analyzing" ──────────────────
+            // The controller does the pending→analyzing transition atomically before
+            // firing this method. If status is anything other than "analyzing" we
+            // have no business running (already completed, already failed, or called
+            // out of order). Bail out cleanly without touching the DB.
             var idea = await _db.BusinessIdeas
                 .Include(i => i.EvaluationScores)
                 .Include(i => i.SwotAnalysis)
                 .Include(i => i.MarketAnalysis)
                 .FirstOrDefaultAsync(i => i.IdeaId == ideaId, ct);
 
-            if (idea == null) { _logger.LogError("Idea {IdeaId} not found", ideaId); return; }
-
-            if (idea.Status == BusinessIdea.StatusCompleted)
+            if (idea == null)
             {
-                _logger.LogWarning("Idea {IdeaId} already evaluated", ideaId);
+                _logger.LogError("Idea {IdeaId} not found", ideaId);
                 return;
             }
 
-            idea.Status = BusinessIdea.StatusAnalyzing;
-            await _db.SaveChangesAsync(ct);
+            if (idea.Status != BusinessIdea.StatusAnalyzing)
+            {
+                _logger.LogWarning(
+                    "Idea {IdeaId} has status '{Status}' — expected 'analyzing', skipping",
+                    ideaId, idea.Status);
+                return;
+            }
 
             var economy = CompressJson(LoadJson("shared", "jordan_economy_snapshot.json"));
             var redFlags = CompressJson(LoadJson("shared", "red_flag_rules.json"));
@@ -173,8 +181,13 @@ namespace Mashroo3i.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Evaluation failed for idea {IdeaId}", ideaId);
-                idea.Status = "failed";
-                await _db.SaveChangesAsync(CancellationToken.None);
+                // Use ExecuteUpdateAsync — the tracked 'idea' entity may be in a
+                // dirty/broken state after a failed SaveChangesAsync.
+                await _db.BusinessIdeas
+                    .Where(i => i.IdeaId == ideaId)
+                    .ExecuteUpdateAsync(s =>
+                        s.SetProperty(i => i.Status, "failed"),
+                    CancellationToken.None);
                 throw;
             }
         }
@@ -204,7 +217,6 @@ namespace Mashroo3i.Services
                 """;
         }
 
-        // ── CHANGED: concerns 4→3, recommendations 4→3, added split-item prevention examples ──
         private static string BuildScoringPrompt(string sharedCtx, string redFlags, string channels)
         {
             return $$"""
@@ -275,12 +287,13 @@ namespace Mashroo3i.Services
                          Item 2: "offer a one-month free credit for every paying customer who refers a friend."
                          The above is forbidden. Merge into one self-contained item.
 
-        Return ONLY valid JSON — no extra text, no markdown:
-        {"overallScore":0,"marketScore":0,"financialScore":0,"executionScore":0,"innovationScore":0,"verdict":"","summary":"","strengths":[],"concerns":[],"recommendations":[]}
+        Return ONLY valid JSON — no extra text, no markdown.
+        strengths, concerns, and recommendations MUST be arrays of plain strings — NOT objects, NOT {"item":"..."}, NOT {"label":"..."}.
+        Each array element is a single string. Example of correct format:
+        {"overallScore":0,"marketScore":0,"financialScore":0,"executionScore":0,"innovationScore":0,"verdict":"","summary":"","strengths":["strength one here","strength two here","strength three here"],"concerns":["Label: explanation one here","Label: explanation two here","Label: explanation three here"],"recommendations":["Label: action one here","Label: action two here","Label: action three here"]}
         """;
         }
 
-        // ── SWOT prompt unchanged ──────────────────────────────────────────────────
         private static string BuildSwotPrompt(string sharedCtx)
         {
             return $$"""
@@ -314,7 +327,6 @@ namespace Mashroo3i.Services
         """;
         }
 
-        // ── CHANGED: opportunities — added title enforcement rules and BAD/GOOD examples ──
         private static string BuildMarketPrompt(string sharedCtx)
         {
             return $$"""
@@ -329,14 +341,16 @@ namespace Mashroo3i.Services
 
         === OUTPUT RULES — substantive but focused ===
         fatalFlaw:               2 sentences, under 50 words. First sentence names the specific blocker in Jordan. Second explains why it matters for this business.
-        competitorAnalysis:      2 sentences, under 50 words. Name 2 real Jordan businesses with specific details (price range or market share). Second sentence explains what makes them a real threat.
+        competitorAnalysis:      2 sentences, under 50 words. Use the knownCompetitors list from the sector data above as your PRIMARY source — pick the 2 most relevant with their actual price ranges and strengths. Second sentence explains what makes them a real threat to this specific idea.
         likelyFailureMode:       2 sentences, under 45 words. First sentence describes the failure scenario specifically. Second explains the warning signs to watch for.
-        marketSize:              Format: "~45M JOD" — number only.
-        saturation:              "HIGH" or "MEDIUM" or "LOW" — one word only.
-        marketTrend:             "GROWING" or "STABLE" or "DECLINING" — one word only.
-        marketTrendReason:       2 sentences, under 45 words. First sentence gives one Jordan-specific stat or trend. Second sentence explains what this means for the business.
+        marketSize:              Use the marketSize_JOD field from the sector data above — pick the most relevant sub-market value and format as "~X JOD". Do NOT invent a number. Example: if sector data shows "28-38M", output "~33M JOD".
+        saturation:              "HIGH" or "MEDIUM" or "LOW" — one word only. Base on knownCompetitors count and marketSize context in the sector data.
+        marketTrend:             Use the growthTrend field from marketSize_JOD in the sector data: output "GROWING", "STABLE", or "DECLINING" exactly.
+        marketTrendReason:       2 sentences, under 45 words. First sentence gives one Jordan-specific stat or trend from the sector data. Second sentence explains what this means for the business.
         differentiationAnalysis: 3 sentences, under 60 words total. First explains the current gap in the market. Second describes how this idea fills it. Third states the realistic competitive advantage.
-        competitors:             Exactly 2 real Jordan competitors.
+        competitors:             Exactly 2 competitors. ALWAYS use the knownCompetitors list from the sector data as your primary source — pick the 2 most relevant entries.
+                                 Use their EXACT names, priceRanges, targetSegments, and mainStrengths from the sector data.
+                                 Only fall back to your own knowledge if fewer than 2 are listed in the sector data.
                                  Each: name, description (phrase under 10 words),
                                  threat (HIGH or MEDIUM or LOW),
                                  priceRange, targetSegment, mainStrength.
