@@ -141,15 +141,10 @@ export default function SubmitIdeaPage() {
 
     try {
       const result = await submitIdea({
-        title:              title.trim(),
-        description:        description.trim(),
+        title:           title.trim(),
+        description:     description.trim(),
         sector,
-        businessType:       null,
-        estimatedBudget:    Number(investment),
-        problemStatement:   null,
-        targetAudience:     null,
-        usp:                null,
-        businessTypeReason: null,
+        estimatedBudget: Number(investment),
       })
 
       const ideaId = result?.ideaId ?? result?.id ?? null

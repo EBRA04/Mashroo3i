@@ -55,7 +55,6 @@ namespace Mashroo3i.Controllers
                     i.IdeaId,
                     i.Title,
                     i.Sector,
-                    i.BusinessType,
                     i.EstimatedBudget,
                     i.Status,
                     i.CreatedAt,

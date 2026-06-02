@@ -207,13 +207,9 @@ namespace Mashroo3i.Services
                 === IDEA ===
                 Title:        {idea.Title}
                 Description:  {idea.Description}
-                Problem:      {idea.ProblemStatement ?? "—"}
-                Target:       {idea.TargetAudience ?? "—"}
-                USP:          {idea.Usp ?? "—"}
-                Type:         {idea.BusinessType}
                 Sector:       {idea.Sector}
                 Budget:       {idea.EstimatedBudget} JOD
-                Location:     {idea.Provinces}
+                Location:     Amman, Jordan
                 """;
         }
 

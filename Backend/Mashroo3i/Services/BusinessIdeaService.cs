@@ -20,12 +20,7 @@ namespace Mashroo3i.Services
                 UserId = userId,
                 Title = dto.Title,
                 Description = dto.Description,
-                ProblemStatement = dto.ProblemStatement,
-                TargetAudience = dto.TargetAudience,
-                Usp = dto.Usp,
-                BusinessType = dto.BusinessType,
                 Sector = dto.Sector,
-                BusinessTypeReason = dto.BusinessTypeReason,
                 EstimatedBudget = dto.EstimatedBudget,
                 Status = BusinessIdea.StatusSubmitted
             };
