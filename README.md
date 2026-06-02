@@ -192,9 +192,3 @@ ASP.NET Core API
 ## About the Project
 
 Mashroo3i was created with a clear mission: to make professional business evaluation and startup planning accessible to every entrepreneur. By combining modern web technologies with artificial intelligence, the platform empowers innovators to turn ideas into opportunities and opportunities into successful ventures.
-
----
-
-## License
-
-All rights reserved © 2026. Mashroo3i.
