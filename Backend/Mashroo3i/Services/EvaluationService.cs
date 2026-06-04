@@ -14,11 +14,14 @@ namespace Mashroo3i.Services
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<EvaluationService> _logger;
 
+        // FIX #6: Removed "notes", "subSectors" — these must reach the AI.
+        // Kept only true noise: metadata, labels, units, version info.
+        // "aiPromptGuidance" and "relevantSubSectors" are intentionally NOT in this list.
         private static readonly HashSet<string> _noiseKeys = new(StringComparer.OrdinalIgnoreCase)
         {
-            "_meta", "label", "labelAr", "description", "subSectors", "examplesAmman",
-            "notes", "unit", "confidence", "sources", "purpose", "version",
-            "lastUpdated", "file", "sector", "sectorKey", "message",
+            "_meta", "label", "labelAr", "examplesAmman",
+            "unit", "confidence", "sources", "purpose", "version",
+            "lastUpdated", "file", "sectorKey", "message",
         };
 
         public EvaluationService(
@@ -30,11 +33,6 @@ namespace Mashroo3i.Services
 
         public async Task EvaluateAsync(Guid ideaId, CancellationToken ct = default)
         {
-            // ── Guard: only proceed if status is "analyzing" ──────────────────
-            // The controller does the pending→analyzing transition atomically before
-            // firing this method. If status is anything other than "analyzing" we
-            // have no business running (already completed, already failed, or called
-            // out of order). Bail out cleanly without touching the DB.
             var idea = await _db.BusinessIdeas
                 .Include(i => i.EvaluationScores)
                 .Include(i => i.SwotAnalysis)
@@ -68,7 +66,6 @@ namespace Mashroo3i.Services
             {
                 _logger.LogInformation("Starting parallel AI evaluation for idea {IdeaId} | sector: {Sector}", ideaId, idea.Sector);
 
-                // ── Run all 3 AI calls in parallel — they are fully independent ──────
                 var scoringTask = _ai.GenerateJsonAsync<ScoreAiResponse>(
                     BuildScoringPrompt(sharedCtx, redFlags, channels), ct);
 
@@ -85,8 +82,6 @@ namespace Mashroo3i.Services
                 var marketResult = await marketTask;
 
                 _logger.LogInformation("All 3 AI calls completed in parallel for idea {IdeaId}", ideaId);
-
-                // ── Persist results sequentially (DbContext is not thread-safe) ──────
 
                 // 1. Scores
                 var scores = new EvaluationScores
@@ -181,8 +176,6 @@ namespace Mashroo3i.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Evaluation failed for idea {IdeaId}", ideaId);
-                // Use ExecuteUpdateAsync — the tracked 'idea' entity may be in a
-                // dirty/broken state after a failed SaveChangesAsync.
                 await _db.BusinessIdeas
                     .Where(i => i.IdeaId == ideaId)
                     .ExecuteUpdateAsync(s =>
@@ -192,11 +185,13 @@ namespace Mashroo3i.Services
             }
         }
 
+        // FIX #4: Added IMPORTANT block so AI knows to match competitors to the specific idea,
+        //         and to use its own knowledge when sector data lacks relevant entries.
         private static string BuildSharedContext(BusinessIdea idea, string economy, string? sector)
         {
             var sectorBlock = sector != null
                 ? $"=== SECTOR: {idea.Sector.ToUpper()} ===\n{sector}"
-                : $"=== SECTOR: {idea.Sector.ToUpper()} ===\nNo benchmark file. Infer from idea + economy data.";
+                : $"=== SECTOR: {idea.Sector.ToUpper()} ===\nNo benchmark file available for this sector. Use your own knowledge of the Jordanian market for all benchmarks, costs, and competitors. Be honest about any uncertainty.";
 
             return $"""
                 === JORDAN ECONOMY (Amman) ===
@@ -210,9 +205,18 @@ namespace Mashroo3i.Services
                 Sector:       {idea.Sector}
                 Budget:       {idea.EstimatedBudget} JOD
                 Location:     Amman, Jordan
+
+                === IMPORTANT — READ BEFORE SCORING ===
+                The sector file above covers MULTIPLE sub-sectors. Match data and competitors to THIS specific idea only.
+                If a competitor entry has a relevantSubSectors field, only use that competitor if it matches this idea.
+                If the sector data does not contain relevant competitors for this specific idea, use your own knowledge of the Jordanian market instead.
+                Never include a competitor that does not actually compete with this specific idea.
+                Use the aiPromptGuidance field inside marketSize_JOD to select the correct sub-market size for this idea.
                 """;
         }
 
+        // FIX #2 (innovation): Added explicit instruction to base innovation on all Jordan knowledge,
+        //         not just sector data. Stops innovation being wrongly penalized by global tools.
         private static string BuildScoringPrompt(string sharedCtx, string redFlags, string channels)
         {
             return $$"""
@@ -236,6 +240,9 @@ namespace Mashroo3i.Services
         financialScore:  budget vs startup costs; use the EXACT gross margin % from sector data above
         executionScore:  can a small team realistically launch in Jordan today?
         innovationScore: is the USP genuinely different from what exists in Jordan?
+                         Base this on ALL competitors you know about in Jordan — not only those listed in the sector data.
+                         If the sector data lacks direct competitors for this specific idea, use your own knowledge of the Jordanian market.
+                         Do not penalize innovation based on global free tools (e.g. Wave, Zoho, Canva) unless those tools are actively dominant in Jordan for this exact use case.
         overallScore:    weighted average (25% each)
 
         verdict: >=75 Highly Promising | 60-74 Promising | 45-59 Needs Refinement | 30-44 High Risk | <30 Not Viable
@@ -308,8 +315,9 @@ namespace Mashroo3i.Services
         Each SWOT field: 3 points separated by \n.
         Each point: 2 sentences. First sentence states the fact with a specific number or Jordan-specific detail. Second sentence explains the business implication.
         Total per point: 35-50 words.
-        Use the EXACT gross margin % from sector data. Be consistent with financialScore.
+        Use the EXACT gross margin % from sector data that matches this specific idea's sub-sector. Be consistent with financialScore.
         Use simple language — explain any term you use.
+        Name real Jordanian competitors relevant to THIS specific idea — not generic sector competitors.
 
         === RISK RULES ===
         Exactly 2 risks (cash flow + one other operational risk).
@@ -323,6 +331,9 @@ namespace Mashroo3i.Services
         """;
         }
 
+        // FIX #1 (market size) + FIX #2 (competitors): Updated competitor instruction to show 3,
+        //   filter by relevantSubSectors, allow AI override for irrelevant data entries,
+        //   and use aiPromptGuidance for correct sub-market size selection.
         private static string BuildMarketPrompt(string sharedCtx)
         {
             return $$"""
@@ -337,19 +348,22 @@ namespace Mashroo3i.Services
 
         === OUTPUT RULES — substantive but focused ===
         fatalFlaw:               2 sentences, under 50 words. First sentence names the specific blocker in Jordan. Second explains why it matters for this business.
-        competitorAnalysis:      2 sentences, under 50 words. Use the knownCompetitors list from the sector data above as your PRIMARY source — pick the 2 most relevant with their actual price ranges and strengths. Second sentence explains what makes them a real threat to this specific idea.
+        competitorAnalysis:      2 sentences, under 50 words. Name the 2 most relevant competitors to THIS specific idea with their actual price ranges and strengths. Second sentence explains what makes them a real threat to this specific idea.
         likelyFailureMode:       2 sentences, under 45 words. First sentence describes the failure scenario specifically. Second explains the warning signs to watch for.
-        marketSize:              Use the marketSize_JOD field from the sector data above — pick the most relevant sub-market value and format as "~X JOD". Do NOT invent a number. Example: if sector data shows "28-38M", output "~33M JOD".
-        saturation:              "HIGH" or "MEDIUM" or "LOW" — one word only. Base on knownCompetitors count and marketSize context in the sector data.
+        marketSize:              STEP 1 — check if marketSize_JOD contains an aiPromptGuidance field. If yes, follow it exactly to pick the correct sub-market.
+                                 STEP 2 — if no aiPromptGuidance, pick the MOST SPECIFIC sub-market field that matches this idea. Never use a total-sector revenue figure for a single-product startup.
+                                 STEP 3 — format the chosen value as "~X JOD" using the midpoint of the range. Example: "28-38M" → "~33M JOD".
+        saturation:              "HIGH" or "MEDIUM" or "LOW" — one word only. Base on real competitor density for this specific idea in Jordan.
         marketTrend:             Use the growthTrend field from marketSize_JOD in the sector data: output "GROWING", "STABLE", or "DECLINING" exactly.
-        marketTrendReason:       2 sentences, under 45 words. First sentence gives one Jordan-specific stat or trend from the sector data. Second sentence explains what this means for the business.
+        marketTrendReason:       2 sentences, under 45 words. First sentence gives one Jordan-specific stat or trend relevant to this idea. Second sentence explains what this means for the business.
         differentiationAnalysis: 3 sentences, under 60 words total. First explains the current gap in the market. Second describes how this idea fills it. Third states the realistic competitive advantage.
-        competitors:             Exactly 2 competitors. ALWAYS use the knownCompetitors list from the sector data as your primary source — pick the 2 most relevant entries.
-                                 Use their EXACT names, priceRanges, targetSegments, and mainStrengths from the sector data.
-                                 Only fall back to your own knowledge if fewer than 2 are listed in the sector data.
-                                 Each: name, description (phrase under 10 words),
-                                 threat (HIGH or MEDIUM or LOW),
-                                 priceRange, targetSegment, mainStrength.
+        competitors:             Exactly 3 competitors relevant to THIS specific idea.
+                                 STEP 1 — check the knownCompetitors list in the sector data. For each entry, check its relevantSubSectors field. Only use it if it matches this idea's specific sub-sector.
+                                 STEP 2 — if a competitor in the data does NOT match this idea (wrong sub-sector, irrelevant product), SKIP it entirely.
+                                 STEP 3 — if fewer than 3 relevant competitors exist in the sector data, use your own knowledge of real businesses operating in Jordan to fill the remaining slots.
+                                 STEP 4 — never include a competitor that does not actually compete with this specific idea. A gym competitor must never appear for a cafe idea. An invoicing app competitor must never appear for a fitness studio.
+                                 Each competitor must have: name, description (phrase under 10 words), threat (HIGH or MEDIUM or LOW), priceRange, targetSegment, mainStrength.
+                                 If using a competitor from your own knowledge, still populate all fields with accurate real-world data.
 
         marketOpportunities:     Exactly 3 opportunities — no more, no less.
                                  Every opportunity MUST have all 3 fields populated. Never leave title empty or generic.
@@ -375,14 +389,15 @@ namespace Mashroo3i.Services
         """;
         }
 
+        // FIX #3: Added more keyword mappings for natural user input
         private static string? ResolveSectorFile(string sector) => sector.ToLower() switch
         {
-            "tech" or "software" or "tech_software" => "tech_software.json",
-            "food" or "fnb" or "food_and_beverage" => "food_and_beverage.json",
-            "health" or "wellness" or "health_wellness" => "health_wellness.json",
-            "education" or "edtech" or "education_training" => "education_training.json",
-            "professional" or "services" or "professional_services" => "professional_services.json",
-            "retail" or "ecommerce" or "retail_ecommerce" => "retail_ecommerce.json",
+            "tech" or "software" or "tech_software" or "saas" or "app" or "it" => "tech_software.json",
+            "food" or "fnb" or "food_and_beverage" or "cafe" or "restaurant" or "coffee" or "catering" or "kitchen" => "food_and_beverage.json",
+            "health" or "wellness" or "health_wellness" or "fitness" or "gym" or "medical" or "beauty" or "salon" => "health_wellness.json",
+            "education" or "edtech" or "education_training" or "tutoring" or "training" or "school" or "courses" => "education_training.json",
+            "professional" or "services" or "professional_services" or "freelance" or "agency" or "consulting" or "design" => "professional_services.json",
+            "retail" or "ecommerce" or "retail_ecommerce" or "shop" or "store" or "handmade" or "fashion" or "ecommerce" => "retail_ecommerce.json",
             _ => null,
         };
 

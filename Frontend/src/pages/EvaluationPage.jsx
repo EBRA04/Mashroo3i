@@ -931,7 +931,7 @@ function MarketTab({ market: m, onViewFinancial }) {
     <>
       {/* Metric cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
-        <MarketMetricCard icon={<IconBuild/>} label="Market Size"  value={m.marketSize || '—'}  note="Total addressable market in Jordan"/>
+        <MarketMetricCard icon={<IconBuild/>} label="Market Size"  value={m.marketSize || '—'}  note="Estimated addressable market in Jordan"/>
         <MarketMetricCard icon={<IconUsers/>} label="Competitors"  value={competitors.length > 0 ? `${competitors.length}+` : '—'} note="Key players identified"/>
         <MarketMetricCard icon={<IconAct/>}   label="Saturation"   value={m.saturation || '—'}  valueColor={satColor}
           note={m.saturation === 'HIGH' ? '5+ established players in target area' : m.saturation === 'LOW' ? 'Underserved — first-mover opportunity' : 'Competition exists but room remains'}/>
