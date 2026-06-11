@@ -37,7 +37,7 @@ namespace Mashroo3i.Services
             _http.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
         }
-
+        //GenerateTextAsync(prompt) — sends one message to the AI API, returns the text response. Uses OpenAI's chat completions format:
         public async Task<string> GenerateTextAsync(string prompt, CancellationToken ct = default)
         {
             var requestBody = new

@@ -20,7 +20,8 @@ function extractErrorMessage(data, status) {
   if (data?.message) return data.message;
   if (data?.errors) {
     const firstField = Object.values(data.errors)[0];
-    if (Array.isArray(firstField) && firstField.length > 0) return firstField[0];
+    if (Array.isArray(firstField) && firstField.length > 0)
+      return firstField[0];
   }
   return data?.title ?? `Request failed (${status})`;
 }
@@ -40,9 +41,12 @@ function handleExpiredSession() {
   }
 }
 
-async function request(endpoint, { auth = false, body, method = "GET", ...rest } = {}) {
+async function request(
+  endpoint,
+  { auth = false, body, method = "GET", ...rest } = {},
+) {
   const headers = { "Content-Type": "application/json" };
-
+  //frontend store and send JWT
   if (auth) {
     const token = localStorage.getItem("accessToken");
     if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -61,7 +65,7 @@ async function request(endpoint, { auth = false, body, method = "GET", ...rest }
   } catch {
     const err = new Error(
       `Cannot reach the server at ${BASE_URL}. ` +
-      `Make sure the backend is running: dotnet run --launch-profile http`
+        `Make sure the backend is running: dotnet run --launch-profile http`,
     );
     err.status = 0;
     throw err;
@@ -73,7 +77,7 @@ async function request(endpoint, { auth = false, body, method = "GET", ...rest }
   } catch {
     data = null;
   }
-
+  // HOW auto logout works
   if (!response.ok) {
     // Token expired or missing — kick the user to login automatically
     if (response.status === 401) {
@@ -94,11 +98,13 @@ async function request(endpoint, { auth = false, body, method = "GET", ...rest }
 }
 
 const api = {
-  get:    (endpoint, opts = {}) => request(endpoint, { ...opts, method: "GET"    }),
-  post:   (endpoint, opts = {}) => request(endpoint, { ...opts, method: "POST"   }),
-  put:    (endpoint, opts = {}) => request(endpoint, { ...opts, method: "PUT"    }),
-  patch:  (endpoint, opts = {}) => request(endpoint, { ...opts, method: "PATCH"  }),
-  delete: (endpoint, opts = {}) => request(endpoint, { ...opts, method: "DELETE" }),
+  get: (endpoint, opts = {}) => request(endpoint, { ...opts, method: "GET" }),
+  post: (endpoint, opts = {}) => request(endpoint, { ...opts, method: "POST" }),
+  put: (endpoint, opts = {}) => request(endpoint, { ...opts, method: "PUT" }),
+  patch: (endpoint, opts = {}) =>
+    request(endpoint, { ...opts, method: "PATCH" }),
+  delete: (endpoint, opts = {}) =>
+    request(endpoint, { ...opts, method: "DELETE" }),
 };
 
 export default api;

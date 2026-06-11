@@ -47,12 +47,12 @@ namespace Mashroo3i.Controllers
         {
             var userId = GetUserId();
 
-            // Validate pack
+            // Validate pack name
             var packKey = dto.Pack?.ToLowerInvariant();
             if (packKey == null || !Packs.TryGetValue(packKey, out var pack))
                 return BadRequest(new { message = "Invalid pack. Choose: starter, value, or builder." });
 
-            // Charge via fake gateway
+            // Charge the card via fake gateway
             var paymentResult = _paymentProvider.Charge(dto.CardNumber, pack.Price, "JOD");
 
             // Always record the payment attempt

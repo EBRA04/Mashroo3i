@@ -237,7 +237,17 @@ namespace Mashroo3i.Services
 
         === SCORING (0-100 each) ===
         marketScore:     demand + purchasing power in Jordan for this idea
-        financialScore:  budget vs startup costs; use the EXACT gross margin % from sector data above
+        financialScore:  Compare the idea's budget to startupCost_JOD.byModel.<the entry matching this idea's specific business model>
+                         (NOT the "overall" range — that spans every business type from online coaching to medical clinics).
+                         State explicitly which byModel entry you used and its low/high/typical values.
+                         If budget >= typical, this is a STRENGTH, not a concern — say so explicitly.
+                         If budget is between low and typical, note it's workable but tight.
+                         If budget < low, flag it as a real red flag.
+                         Then check budget against monthlyFixedCosts_JOD.byModel.<matching model> and
+                         breakEven_months.<matching model>.typical to estimate whether there is enough
+                         working capital to survive to break-even. Compare against redFlags.workingCapitalMinimum_JOD if present.
+                         Use the EXACT gross margin % from sector data above.
+                         Any JOD figure cited must come from the sector data above or the idea's stated budget — never invent figures.
         executionScore:  can a small team realistically launch in Jordan today?
         innovationScore: is the USP genuinely different from what exists in Jordan?
                          Base this on ALL competitors you know about in Jordan — not only those listed in the sector data.
@@ -316,6 +326,11 @@ namespace Mashroo3i.Services
         Each point: 2 sentences. First sentence states the fact with a specific number or Jordan-specific detail. Second sentence explains the business implication.
         Total per point: 35-50 words.
         Use the EXACT gross margin % from sector data that matches this specific idea's sub-sector. Be consistent with financialScore.
+        Any startup cost, monthly cost, or budget figure mentioned anywhere in this output MUST come from
+        startupCost_JOD or monthlyFixedCosts_JOD in the sector data above (use the byModel entry matching
+        this idea's specific business model — never the "overall" range). Do not invent cost figures.
+        Be consistent with the financialScore reasoning — if the budget is healthy relative to typical
+        startup costs, do not contradict that by claiming the budget is thin.
         Use simple language — explain any term you use.
         Name real Jordanian competitors relevant to THIS specific idea — not generic sector competitors.
 
@@ -347,6 +362,11 @@ namespace Mashroo3i.Services
         {{sharedCtx}}
 
         === OUTPUT RULES — substantive but focused ===
+        NUMBERS RULE: Any JOD figure, percentage, or cost cited anywhere in this output must come either
+        from the sector data above, from the idea's stated budget, or from your own verified knowledge of
+        a SPECIFIC named real business in Jordan. Never invent ranges, approximate "typical costs," or
+        generic figures that do not appear in the sector data and are not tied to a specific real entity.
+
         fatalFlaw:               2 sentences, under 50 words. First sentence names the specific blocker in Jordan. Second explains why it matters for this business.
         competitorAnalysis:      2 sentences, under 50 words. Name the 2 most relevant competitors to THIS specific idea with their actual price ranges and strengths. Second sentence explains what makes them a real threat to this specific idea.
         likelyFailureMode:       2 sentences, under 45 words. First sentence describes the failure scenario specifically. Second explains the warning signs to watch for.

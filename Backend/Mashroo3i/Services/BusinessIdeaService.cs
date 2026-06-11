@@ -12,7 +12,7 @@ namespace Mashroo3i.Services
         {
             _db = db;
         }
-
+        //Thin wrapper over the DB. Does one thing: creates an idea.
         public async Task<BusinessIdea> CreateAsync(CreateBusinessIdeaDto dto, Guid userId)
         {
             var idea = new BusinessIdea

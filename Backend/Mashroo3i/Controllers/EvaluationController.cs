@@ -36,13 +36,13 @@ namespace Mashroo3i.Controllers
         {
             var userId = GetUserId();
             if (userId == null) return Unauthorized();
-
-            // ── Step 1: Atomic credit deduction ──────────────────────────────
+            //like this we can avoid the TOCTOU Problem
+            //  Step 1: Atomic credit deduction 
             // Single UPDATE WHERE Credits > 0 — eliminates the TOCTOU window
             // between reading credits and deducting them.
             var creditRows = await _db.Users
                 .Where(u => u.Id == userId.Value && u.EvaluationCredits > 0)
-                .ExecuteUpdateAsync(s =>
+                .ExecuteUpdateAsync(s => //main part of the solution  
                     s.SetProperty(u => u.EvaluationCredits, u => u.EvaluationCredits - 1));
 
             if (creditRows == 0)
@@ -58,7 +58,7 @@ namespace Mashroo3i.Controllers
                 });
             }
 
-            // ── Step 2: Atomic status transition: pending → analyzing ─────────
+            //  Step 2: Atomic status transition: pending → analyzing 
             // ExecuteUpdateAsync generates a single UPDATE … WHERE IdeaId = x AND Status = 'pending'.
             // If 0 rows are affected, another request already owns this evaluation slot.
             // In that case we refund the credit we just deducted.
@@ -89,8 +89,9 @@ namespace Mashroo3i.Controllers
                 return Accepted(new { message = "Evaluation already in progress.", existing.Status });
             }
 
-            // ── Step 3: Fire-and-forget with a fresh DI scope ─────────────────
+            //  Step 3: Fire-and-forget with a fresh DI scope 
             // On failure, EvaluateAsync marks status = "failed" and we refund the credit.
+            //the _ means "I'm intentionally discarding this task." The code doesn't await it. The HTTP response returns immediately.
             _ = Task.Run(async () =>
             {
                 await using var scope = _scopeFactory.CreateAsyncScope();
@@ -98,7 +99,7 @@ namespace Mashroo3i.Controllers
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 try
                 {
-                    await evalService.EvaluateAsync(ideaId);
+                    await evalService.EvaluateAsync(ideaId);//The Evaluation service call
                 }
                 catch (Exception ex)
                 {

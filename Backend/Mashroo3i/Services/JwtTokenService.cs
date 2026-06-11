@@ -15,7 +15,7 @@ namespace Mashroo3i.Services
         {
             _config = config;
         }
-
+        //just generate the token 
         public string GenerateAccessToken(User user)
         {
             var key = new SymmetricSecurityKey(

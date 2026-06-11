@@ -23,7 +23,7 @@ namespace Mashroo3i.Controllers
             _ai = ai;
         }
 
-        // GET /api/financial-plans/{ideaId} — returns all 6 saved slider values
+        // GET /api/financial-plans/{ideaId} —  returns all 6 saved slider values
         [HttpGet("{ideaId:guid}")]
         public async Task<IActionResult> Get(Guid ideaId)
         {
@@ -107,6 +107,9 @@ namespace Mashroo3i.Controllers
                 .FirstOrDefaultAsync(i => i.IdeaId == ideaId && i.UserId == userId.Value);
             if (idea == null) return NotFound(new { message = "Idea not found." });
 
+            //The Cache here is based on the idea that insights only need to be regenerated if any of the inputs change.
+            //so the reason of it is just store the ai insights results 
+
             // ── Cache key: hash of all inputs that affect the insights ──────────
             var inputFingerprint = $"{dto.CapEx}|{dto.OpEx}|{dto.Ticket}|{dto.Customers}|{dto.Margin}|{dto.Growth}|{dto.Year1Revenue}|{dto.Year1Profit}|{dto.Roi}|{dto.BreakEvenMonth}";
 
@@ -128,7 +131,7 @@ namespace Mashroo3i.Controllers
                 catch { /* corrupt cache — fall through to regenerate */ }
             }
 
-            // ── Generate fresh insights ──────────────────────────────────────────
+            // ── Generate insights ──────────────────────────────────────────
             var prompt = $"""
                 You are a financial advisor analyzing a Jordan startup. Generate exactly 3 concise insights.
 

@@ -342,8 +342,8 @@ function Step2({ ticket, customers, margin, growth, setTicket, setCustomers, set
       </SectionTitle>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem 2rem', marginBottom: '1.75rem' }}>
-        <SliderRow label="Average Ticket Size"   tooltip="Average JOD spent per customer per visit."           value={ticket}    min={1}   max={50}    step={0.5} onChange={setTicket} />
-        <SliderRow label="Customers per Month"   tooltip="Expected paying customers in your first month."      value={customers} min={100} max={10000} step={50}  suffix="" onChange={setCustomers} />
+        <SliderRow label="Average Ticket Size"   tooltip="Average JOD spent per customer per visit."           value={ticket}    min={1}   max={200}   step={1}  onChange={setTicket} />
+        <SliderRow label="Customers per Month"   tooltip="Expected paying customers in your first month."      value={customers} min={1}   max={1000}  step={1}  suffix="" onChange={setCustomers} />
         <SliderRow label="Gross Margin"          tooltip="What's left from each JOD after direct costs."       value={margin}    min={20}  max={90}    step={1}   suffix="%" onChange={setMargin} />
         <SliderRow label="Monthly Growth Rate"   tooltip="Month-over-month customer volume growth."             value={growth}    min={0}   max={15}    step={0.5} suffix="%" onChange={setGrowth} />
       </div>

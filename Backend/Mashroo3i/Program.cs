@@ -17,10 +17,11 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 builder.Services.AddHttpClient();
+//Singleton One instance for the entire app lifetime
 builder.Services.AddSingleton<IAIService>(sp =>
 {
     var config = sp.GetRequiredService<IConfiguration>();
-    var active = config["AIProvider:Active"] ?? "Groq";
+    var active = config["AIProvider:Active"] ?? "Anthropic";
     var settings = new ProviderSettings
     {
         ApiKey = config[$"AIProvider:{active}:ApiKey"]!,
@@ -34,10 +35,14 @@ builder.Services.AddSingleton<IAIService>(sp =>
         sp.GetRequiredService<ILogger<OpenAICompatibleAIService>>());
 });
 
+// Dependency injection for application services
+//Scoped New instance per HTTP request
 builder.Services.AddScoped<BusinessIdeaService>();
 builder.Services.AddScoped<EvaluationService>();
 builder.Services.AddScoped<IFakePaymentProvider, FakePaymentProvider>();
 
+
+//validate JWT tokens on incoming requests
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {

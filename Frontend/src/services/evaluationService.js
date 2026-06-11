@@ -15,7 +15,7 @@
  *       swot:    null while step 2 is running
  *       market:  null while step 3 is running
  *
- * Evaluation runs 3 sequential AI steps in the background:
+ * Evaluation runs 3 AI steps in the background:
  *   Step 1 → scoring   (scores, verdict, summary, concerns, recommendations)
  *   Step 2 → swot      (SWOT quadrants + risk cards)
  *   Step 3 → market    (market size, competitors, differentiation, opportunities, fatal flaw)

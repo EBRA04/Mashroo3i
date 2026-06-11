@@ -23,7 +23,6 @@ namespace Mashroo3i.Services
     ///   Card 4242 4242 4242 4242 → always succeeds
     ///   Any other card number    → always fails
     ///
-    /// This keeps the demo realistic without touching real money or Stripe.
     /// </summary>
     public class FakePaymentProvider : IFakePaymentProvider
     {

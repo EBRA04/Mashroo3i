@@ -1,7 +1,12 @@
 {
   "_meta": {
     "lastUpdated": "2026-06-03",
-    "sources": ["Statista 2024", "Jordan Ministry of Health", "Amman municipality licensing", "field research 2025"]
+    "sources": [
+      "Statista 2024",
+      "Jordan Ministry of Health",
+      "Amman municipality licensing",
+      "field research 2025"
+    ]
   },
   "subSectors": [
     "Gym / Fitness Studio",
@@ -14,55 +19,79 @@
     "Mental Health / Coaching"
   ],
   "marketSize_JOD": {
-    "gymFitnessStudios_amman": "28-38M",
+    "fitnessIndustry_amman": "35-55M",
+    "premiumFitness_amman": "15-25M",
+    "boutiqueFitness_amman": "8-15M",
     "beautyWellness_amman": "18-25M",
     "totalHealthWellness_jordan": "55-75M",
     "digitalFitness_USD_2027_projected": "66M",
     "growthTrend": "GROWING",
-    "note": "Digital fitness growing 10.28% CAGR 2023-2027 per Statista. Physical wellness growing with urban middle class.",
-    "aiPromptGuidance": "For gym or fitness ideas use gymFitnessStudios_amman. For beauty or salon ideas use beautyWellness_amman. For online coaching use digitalFitness_USD_2027_projected converted at 0.71."
+    "note": "Driven by youth population, rising fitness awareness, and social media fitness culture in West Amman (Abdoun, Sweifieh, Khalda).",
+    "aiPromptGuidance": "For premium/strength/bodybuilding gyms competing with Gold's Gym, Hive Fit Nation, Fitness First use premiumFitness_amman. For boutique HIIT/CrossFit/functional studios use boutiqueFitness_amman. For general/budget gyms use fitnessIndustry_amman. For beauty or salon ideas use beautyWellness_amman. For online coaching use digitalFitness_USD_2027_projected converted at 0.71."
   },
   "knownCompetitors": {
     "gym_fitness": [
       {
-        "name": "Curves for Women",
-        "type": "Women-only circuit training gym",
-        "locations": "Multiple Amman branches including Sweifieh, Khalda, Abdoun",
-        "priceRange": "25-45 JOD/month",
-        "targetSegment": "Women 30-55, time-constrained",
-        "mainStrength": "International franchise brand trust, women-only format, multiple branches",
+        "name": "Gold's Gym Jordan",
+        "type": "International bodybuilding gym chain",
+        "locations": "Abdoun, Khalda",
+        "priceRange": "30-60 JOD/month",
+        "targetSegment": "Bodybuilders, general fitness men 18-40",
+        "mainStrength": "Strong weightlifting culture, brand recognition, heavy equipment focus",
+        "threat": "VERY HIGH",
+        "relevantSubSectors": [
+          "Gym / Fitness Studio"
+        ]
+      },
+      {
+        "name": "Fitness First Jordan",
+        "type": "Premium fitness club",
+        "locations": "Abdali Mall, Amman",
+        "priceRange": "40-80 JOD/month",
+        "targetSegment": "Professionals, expats, premium lifestyle users",
+        "mainStrength": "Luxury experience, classes, corporate memberships",
+        "threat": "VERY HIGH",
+        "relevantSubSectors": [
+          "Gym / Fitness Studio",
+          "Wellness & Spa"
+        ]
+      },
+      {
+        "name": "Hive Fit Nation",
+        "type": "Mega fitness lifestyle club",
+        "locations": "Mecca Street / Khalda",
+        "priceRange": "50-100 JOD/month",
+        "targetSegment": "Young professionals, premium fitness users",
+        "mainStrength": "Large facility, multiple floors, classes, cafe, recovery zone",
+        "threat": "VERY HIGH",
+        "relevantSubSectors": [
+          "Gym / Fitness Studio",
+          "Wellness & Spa"
+        ]
+      },
+      {
+        "name": "Optimum Fitness",
+        "type": "Local gym chain",
+        "locations": "Khalda, Sweifieh, multiple Amman branches",
+        "priceRange": "20-45 JOD/month",
+        "targetSegment": "Middle-income general fitness users",
+        "mainStrength": "Affordable, accessible, multiple branches",
         "threat": "HIGH",
-        "relevantSubSectors": ["Gym / Fitness Studio"]
+        "relevantSubSectors": [
+          "Gym / Fitness Studio"
+        ]
       },
       {
-        "name": "Magma Lifestyle & Fitness Center",
-        "type": "Premium full-service gym",
-        "locations": "Abdoun, Amman",
-        "priceRange": "80-150 JOD/month",
-        "targetSegment": "Upper-income professionals",
-        "mainStrength": "50+ weekly classes, rooftop track, nutrition services, 30+ trainers",
-        "threat": "MEDIUM",
-        "relevantSubSectors": ["Gym / Fitness Studio", "Wellness & Spa"]
-      },
-      {
-        "name": "Hive Gym",
-        "type": "Large full-service gym with pools",
-        "locations": "West Amman",
-        "priceRange": "60-100 JOD/month",
-        "targetSegment": "Mixed, families and professionals",
-        "mainStrength": "Pools, jacuzzis, large equipment variety",
-        "threat": "MEDIUM",
-        "relevantSubSectors": ["Gym / Fitness Studio"]
-      },
-      {
-        "name": "CrossFit Crescent",
-        "type": "CrossFit box",
-        "locations": "Amman",
+        "name": "F45 Training Abdoun",
+        "type": "Functional HIIT studio",
+        "locations": "Abdoun East",
         "priceRange": "70-120 JOD/month",
-        "targetSegment": "Fitness enthusiasts 20-35",
-        "mainStrength": "Strong community, high-intensity niche",
-        "threat": "LOW",
-        "relevantSubSectors": ["Gym / Fitness Studio"]
+        "targetSegment": "Fat loss, group training clients",
+        "mainStrength": "Structured group workouts, strong community retention",
+        "threat": "MEDIUM",
+        "relevantSubSectors": [
+          "Gym / Fitness Studio"
+        ]
       }
     ],
     "beauty_wellness": [
@@ -74,7 +103,10 @@
         "targetSegment": "Women, families",
         "mainStrength": "Subsidized pricing, trusted brand",
         "threat": "MEDIUM",
-        "relevantSubSectors": ["Beauty Salon / Barber", "Wellness & Spa"]
+        "relevantSubSectors": [
+          "Beauty Salon / Barber",
+          "Wellness & Spa"
+        ]
       },
       {
         "name": "Indulge Salon",
@@ -84,7 +116,9 @@
         "targetSegment": "Women 25-50, professional and social occasions",
         "mainStrength": "Strong brand loyalty, experienced stylists, premium positioning",
         "threat": "MEDIUM",
-        "relevantSubSectors": ["Beauty Salon / Barber"]
+        "relevantSubSectors": [
+          "Beauty Salon / Barber"
+        ]
       }
     ]
   },
@@ -95,14 +129,53 @@
     "womenOnlyOpportunity": "Women-only gyms command premium loyalty in Amman. Curves dominates mid-market 30-55 age group; boutique gap exists for ages 20-35."
   },
   "startupCost_JOD": {
-    "overall": { "low": 500, "high": 80000, "typical": 15000 },
+    "overall": {
+      "low": 500,
+      "high": 80000,
+      "typical": 15000
+    },
     "byModel": {
-      "online_wellness_coaching": { "low": 500, "high": 2000, "typical": 1000 },
-      "home_service": { "low": 2000, "high": 6000, "typical": 3500 },
-      "beauty_salon_small": { "low": 8000, "high": 20000, "typical": 12000 },
-      "gym_studio": { "low": 15000, "high": 40000, "typical": 22000 },
-      "physiotherapy_clinic": { "low": 10000, "high": 30000, "typical": 18000 },
-      "medical_clinic": { "low": 50000, "high": 180000, "typical": 90000 }
+      "online_wellness_coaching": {
+        "low": 500,
+        "high": 2000,
+        "typical": 1000
+      },
+      "home_service": {
+        "low": 2000,
+        "high": 6000,
+        "typical": 3500
+      },
+      "beauty_salon_small": {
+        "low": 8000,
+        "high": 20000,
+        "typical": 12000
+      },
+      "gym_studio": {
+        "low": 15000,
+        "high": 40000,
+        "typical": 22000
+      },
+      "physiotherapy_clinic": {
+        "low": 10000,
+        "high": 30000,
+        "typical": 18000
+      },
+      "medical_clinic": {
+        "low": 50000,
+        "high": 180000,
+        "typical": 90000
+      },
+      "premium_gym": {
+        "low": 50000,
+        "high": 100000,
+        "typical": 70000,
+        "note": "Premium strength/bodybuilding gym with quality equipment, targeting men 18-40, competing with Gold's Gym/Hive/Fitness First tier"
+      },
+      "boutique_studio": {
+        "low": 12000,
+        "high": 30000,
+        "typical": 18000
+      }
     },
     "legalRequirements": {
       "homeHealthcareLicense_JOD": 300,
@@ -113,56 +186,187 @@
     }
   },
   "monthlyFixedCosts_JOD": {
-    "overall": { "low": 170, "high": 5000, "typical": 2000 },
+    "overall": {
+      "low": 170,
+      "high": 5000,
+      "typical": 2000
+    },
     "byModel": {
       "online_coaching": {
-        "tools": 20, "marketing": 150, "total_range": "170-300"
+        "tools": 20,
+        "marketing": 150,
+        "total_range": "170-300"
       },
       "beauty_salon": {
-        "rent": 700, "utilities": 100, "staff_1": 470, "supplies": 200, "marketing": 100, "total_range": "1500-2100"
+        "rent": 700,
+        "utilities": 100,
+        "staff_1": 470,
+        "supplies": 200,
+        "marketing": 100,
+        "total_range": "1500-2100"
       },
       "gym_small": {
         "rent_westAmman_note": "West Amman (Sweifieh, Khalda, Abdoun) commercial rent for 150-200 sqm is 1200-2000 JOD/month in 2025",
-        "rent": 1400, "utilities": 300, "staff_1": 470, "maintenance": 150, "marketing": 150, "total_range": "2500-4000"
+        "rent": 1400,
+        "utilities": 300,
+        "staff_1": 470,
+        "maintenance": 150,
+        "marketing": 150,
+        "total_range": "2500-4000"
       },
       "physiotherapy": {
-        "rent": 600, "equipment_maintenance": 100, "staff": 650, "marketing": 100, "total_range": "1500-2600"
+        "rent": 600,
+        "equipment_maintenance": 100,
+        "staff": 650,
+        "marketing": 100,
+        "total_range": "1500-2600"
+      },
+      "premium_gym": {
+        "rent": 2200,
+        "utilities": 400,
+        "staff": 1500,
+        "equipment_maintenance": 500,
+        "marketing": 300,
+        "total_range": "4500-6500",
+        "note": "Larger floor space (250-400 sqm West Amman), multiple trainers, premium equipment maintenance"
       }
     },
     "staffCosts_note": "Female instructor/trainer minimum 470 JOD/month + 67 JOD SSC = 537 JOD total. For 2 staff multiply accordingly."
   },
   "margins": {
-    "online_coaching": { "grossMargin_pct": { "low": 70, "high": 90, "typical": 80 } },
-    "beauty_salon": { "grossMargin_pct": { "low": 45, "high": 65, "typical": 55 } },
-    "gym": { "grossMargin_pct": { "low": 40, "high": 65, "typical": 52 } },
-    "physiotherapy": { "grossMargin_pct": { "low": 50, "high": 70, "typical": 60 } },
-    "medical_clinic": { "grossMargin_pct": { "low": 35, "high": 60, "typical": 48 } },
-    "netMargin_pct": { "low": 10, "high": 35, "typical": 20 }
+    "online_coaching": {
+      "grossMargin_pct": {
+        "low": 70,
+        "high": 90,
+        "typical": 80
+      }
+    },
+    "beauty_salon": {
+      "grossMargin_pct": {
+        "low": 45,
+        "high": 65,
+        "typical": 55
+      }
+    },
+    "gym": {
+      "grossMargin_pct": {
+        "low": 40,
+        "high": 65,
+        "typical": 52
+      }
+    },
+    "physiotherapy": {
+      "grossMargin_pct": {
+        "low": 50,
+        "high": 70,
+        "typical": 60
+      }
+    },
+    "medical_clinic": {
+      "grossMargin_pct": {
+        "low": 35,
+        "high": 60,
+        "typical": 48
+      }
+    },
+    "netMargin_pct": {
+      "low": 10,
+      "high": 35,
+      "typical": 20
+    }
   },
   "pricingBenchmarks_JOD": {
-    "gymMembership_monthly": { "low": 25, "high": 80, "typical": 45 },
-    "personalTraining_session": { "low": 15, "high": 50, "typical": 25 },
-    "nutritionConsult_session": { "low": 20, "high": 60, "typical": 35 },
-    "beautyHaircut_women": { "low": 15, "high": 60, "typical": 30 },
-    "physiotherapy_session": { "low": 25, "high": 70, "typical": 40 },
-    "onlineCoaching_monthly": { "low": 50, "high": 200, "typical": 90 }
+    "gymMembership_monthly": {
+      "low": 25,
+      "high": 80,
+      "typical": 45
+    },
+    "personalTraining_session": {
+      "low": 15,
+      "high": 50,
+      "typical": 25
+    },
+    "nutritionConsult_session": {
+      "low": 20,
+      "high": 60,
+      "typical": 35
+    },
+    "beautyHaircut_women": {
+      "low": 15,
+      "high": 60,
+      "typical": 30
+    },
+    "physiotherapy_session": {
+      "low": 25,
+      "high": 70,
+      "typical": 40
+    },
+    "onlineCoaching_monthly": {
+      "low": 50,
+      "high": 200,
+      "typical": 90
+    }
   },
   "customerAcquisitionCost_JOD": {
-    "wordOfMouth": { "low": 2, "high": 10, "typical": 5 },
-    "instagramOrganic": { "low": 5, "high": 20, "typical": 10 },
-    "paidAds": { "low": 15, "high": 50, "typical": 25 },
-    "googleMaps": { "low": 10, "high": 35, "typical": 20 }
+    "wordOfMouth": {
+      "low": 2,
+      "high": 10,
+      "typical": 5
+    },
+    "instagramOrganic": {
+      "low": 5,
+      "high": 20,
+      "typical": 10
+    },
+    "paidAds": {
+      "low": 15,
+      "high": 50,
+      "typical": 25
+    },
+    "googleMaps": {
+      "low": 10,
+      "high": 35,
+      "typical": 20
+    }
   },
   "monthlyChurn_pct": {
-    "gym": { "low": 8, "high": 25, "typical": 15 },
-    "beauty_salon": { "low": 5, "high": 20, "typical": 10 },
-    "coaching": { "low": 10, "high": 30, "typical": 18 }
+    "gym": {
+      "low": 8,
+      "high": 25,
+      "typical": 15
+    },
+    "beauty_salon": {
+      "low": 5,
+      "high": 20,
+      "typical": 10
+    },
+    "coaching": {
+      "low": 10,
+      "high": 30,
+      "typical": 18
+    }
   },
   "breakEven_months": {
-    "online_coaching": { "low": 1, "high": 4, "typical": 2 },
-    "beauty_salon": { "low": 6, "high": 14, "typical": 9 },
-    "gym": { "low": 8, "high": 18, "typical": 12 },
-    "medical_clinic": { "low": 12, "high": 36, "typical": 20 }
+    "online_coaching": {
+      "low": 1,
+      "high": 4,
+      "typical": 2
+    },
+    "beauty_salon": {
+      "low": 6,
+      "high": 14,
+      "typical": 9
+    },
+    "gym": {
+      "low": 8,
+      "high": 18,
+      "typical": 12
+    },
+    "medical_clinic": {
+      "low": 12,
+      "high": 36,
+      "typical": 20
+    }
   },
   "commonRisks": [
     "Medical clinics: first months rarely cover payroll — need JOD 5K-15K working capital reserve",
